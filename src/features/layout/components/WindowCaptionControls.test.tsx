@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const isTauriMock = vi.hoisted(() => vi.fn());
 const getCurrentWindowMock = vi.hoisted(() => vi.fn());
 const isWindowsPlatformMock = vi.hoisted(() => vi.fn());
+const isLinuxPlatformMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@tauri-apps/api/core", () => ({
   isTauri: isTauriMock,
@@ -16,6 +17,7 @@ vi.mock("@tauri-apps/api/window", () => ({
 
 vi.mock("@utils/platformPaths", () => ({
   isWindowsPlatform: isWindowsPlatformMock,
+  isLinuxPlatform: isLinuxPlatformMock,
 }));
 
 import { WindowCaptionControls } from "./WindowCaptionControls";
@@ -28,6 +30,7 @@ describe("WindowCaptionControls", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isWindowsPlatformMock.mockReturnValue(true);
+    isLinuxPlatformMock.mockReturnValue(false);
     isTauriMock.mockReturnValue(true);
     getCurrentWindowMock.mockReturnValue({
       minimize,
@@ -62,6 +65,23 @@ describe("WindowCaptionControls", () => {
     render(<WindowCaptionControls />);
 
     expect(screen.queryByRole("group", { name: "Window controls" })).toBeNull();
+  });
+
+  it("renders controls on Linux in Tauri and wires actions", () => {
+    isWindowsPlatformMock.mockReturnValue(false);
+    isLinuxPlatformMock.mockReturnValue(true);
+
+    render(<WindowCaptionControls />);
+
+    expect(screen.getByRole("group", { name: "Window controls" })).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Minimize window" }));
+    fireEvent.click(screen.getByRole("button", { name: "Maximize window" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close window" }));
+
+    expect(minimize).toHaveBeenCalledTimes(1);
+    expect(toggleMaximize).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it("does not render when not running in Tauri", () => {

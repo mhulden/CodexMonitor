@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import type { AppSettings } from "@/types";
-import { isWindowsPlatform } from "@utils/platformPaths";
+import { isLinuxPlatform, isWindowsPlatform } from "@utils/platformPaths";
 
 type UseAppShellOrchestrationOptions = {
   isCompact: boolean;
@@ -44,6 +44,8 @@ export function useAppShellOrchestration({
   appSettings,
 }: UseAppShellOrchestrationOptions) {
   const isWindows = isWindowsPlatform();
+  const isLinux = isLinuxPlatform();
+  const usesCustomWindowChrome = isWindows || isLinux;
   const showGitDetail = Boolean(selectedDiffPath) && isPhone && centerMode === "diff";
   const isThreadOpen = Boolean(activeThreadId && showComposer);
 
@@ -53,7 +55,9 @@ export function useAppShellOrchestration({
     shouldReduceTransparency ? " reduced-transparency" : ""
   }${!isCompact && sidebarCollapsed ? " sidebar-collapsed" : ""}${
     !isCompact && rightPanelCollapsed ? " right-panel-collapsed" : ""
-  }${isWindows ? " is-windows" : ""}`;
+  }${isWindows ? " is-windows" : ""}${isLinux ? " is-linux" : ""}${
+    usesCustomWindowChrome ? " uses-custom-window-chrome" : ""
+  }`;
 
   const appStyle = useMemo<CSSProperties>(
     () => ({
@@ -68,14 +72,14 @@ export function useAppShellOrchestration({
       "--ui-font-family": appSettings.uiFontFamily,
       "--code-font-family": appSettings.codeFontFamily,
       "--code-font-size": `${appSettings.codeFontSize}px`,
-      "--sidebar-top-padding": isWindows ? "10px" : "36px",
-      "--right-panel-top-padding": isWindows
+      "--sidebar-top-padding": usesCustomWindowChrome ? "10px" : "36px",
+      "--right-panel-top-padding": usesCustomWindowChrome
         ? "calc(var(--main-topbar-height, 44px) + 6px)"
         : "12px",
-      "--home-scroll-offset": isWindows ? "var(--main-topbar-height, 44px)" : "0px",
-      "--window-caption-width": isWindows ? "138px" : "0px",
-      "--window-caption-gap": isWindows ? "10px" : "0px",
-      ...(isWindows
+      "--home-scroll-offset": usesCustomWindowChrome ? "var(--main-topbar-height, 44px)" : "0px",
+      "--window-caption-width": usesCustomWindowChrome ? "138px" : "0px",
+      "--window-caption-gap": usesCustomWindowChrome ? "10px" : "0px",
+      ...(usesCustomWindowChrome
         ? {
             "--titlebar-height": "8px",
             "--titlebar-drag-strip-z-index": "5",
@@ -97,8 +101,8 @@ export function useAppShellOrchestration({
       appSettings.uiFontFamily,
       chatDiffSplitPositionPercent,
       debugPanelHeight,
-      isWindows,
       isCompact,
+      usesCustomWindowChrome,
       planPanelHeight,
       rightPanelCollapsed,
       rightPanelWidth,

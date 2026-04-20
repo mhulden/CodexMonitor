@@ -121,7 +121,7 @@ pub fn run() {
                 let tray_state = app.state::<tray::TrayState>();
                 tray::initialize(&app.handle(), tray_state.inner())?;
             }
-            #[cfg(target_os = "windows")]
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 if let Some(main_window) = app.get_webview_window("main") {
                     let _ = main_window.set_decorations(false);
