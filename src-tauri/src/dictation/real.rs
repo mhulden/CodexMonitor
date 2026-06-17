@@ -1426,14 +1426,14 @@ fn transcribe_audio(
         .full(params, &audio)
         .map_err(|error| format!("Transcription failed: {error}"))?;
 
-    let segments = state
-        .full_n_segments()
-        .map_err(|error| format!("Failed to read segments: {error}"))?;
+    let segments = state.full_n_segments();
     eprintln!("dictation: whisper segments={}", segments);
     let mut transcript = String::new();
     for index in 0..segments {
         let segment = state
-            .full_get_segment_text(index)
+            .get_segment(index)
+            .ok_or_else(|| format!("Failed to read segment {index}"))?
+            .to_str_lossy()
             .map_err(|error| format!("Failed to read segment: {error}"))?;
         transcript.push_str(&segment);
     }
