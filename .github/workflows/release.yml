@@ -16,8 +16,15 @@ jobs:
         include:
           - runner: macos-15
             arch: aarch64
+            deployment_target: "11.0"
           - runner: macos-15-intel
             arch: x64
+            deployment_target: "10.15"
+    env:
+      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+      CMAKE_OSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+      CFLAGS: -mmacosx-version-min=${{ matrix.deployment_target }}
+      CXXFLAGS: -mmacosx-version-min=${{ matrix.deployment_target }}
     steps:
       - uses: actions/checkout@v4
         with:
