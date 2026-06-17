@@ -111,15 +111,31 @@ if [[ "${identity}" != "-" ]]; then
   codesign_args+=(--timestamp)
 fi
 
-codesign "${codesign_args[@]}" "${frameworks_dir}/libcrypto.3.dylib"
-codesign "${codesign_args[@]}" "${frameworks_dir}/libssl.3.dylib"
-codesign "${codesign_args[@]}" "${codesign_entitlements[@]}" "${bin_path}"
+codesign_deep_args=(--force --deep --options runtime --sign "${identity}")
+if [[ "${identity}" != "-" ]]; then
+  codesign_deep_args+=(--timestamp)
+fi
+
+sign_path() {
+  local label="$1"
+  local path="$2"
+  shift 2
+
+  echo "Signing ${label}: ${path}"
+  codesign "$@" "${path}"
+}
+
+sign_path "libcrypto" "${frameworks_dir}/libcrypto.3.dylib" "${codesign_args[@]}"
+sign_path "libssl" "${frameworks_dir}/libssl.3.dylib" "${codesign_args[@]}"
 if [[ -f "${daemon_path}" ]]; then
-  codesign "${codesign_args[@]}" "${codesign_entitlements[@]}" "${daemon_path}"
+  sign_path "daemon" "${daemon_path}" "${codesign_args[@]}" "${codesign_entitlements[@]}"
 fi
 if [[ -f "${daemonctl_path}" ]]; then
-  codesign "${codesign_args[@]}" "${codesign_entitlements[@]}" "${daemonctl_path}"
+  sign_path "daemonctl" "${daemonctl_path}" "${codesign_args[@]}" "${codesign_entitlements[@]}"
 fi
-codesign "${codesign_args[@]}" "${codesign_entitlements[@]}" "${app_path}"
+sign_path "main binary" "${bin_path}" "${codesign_args[@]}" "${codesign_entitlements[@]}"
+sign_path "app bundle" "${app_path}" "${codesign_deep_args[@]}" "${codesign_entitlements[@]}"
+
+codesign --verify --deep --strict --verbose=2 "${app_path}"
 
 echo "Bundled OpenSSL dylibs and re-signed ${app_path}"
