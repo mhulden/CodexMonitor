@@ -62,17 +62,17 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          mkdir -p release-artifacts "release-artifacts/dmg-root-${{ matrix.arch }}"
+          mkdir -p release-artifacts "release-dmg-root-${{ matrix.arch }}"
 
           ditto "src-tauri/target/release/bundle/macos/Codex Monitor.app" \
-            "release-artifacts/dmg-root-${{ matrix.arch }}/Codex Monitor.app"
+            "release-dmg-root-${{ matrix.arch }}/Codex Monitor.app"
 
           ditto -c -k --keepParent \
             "src-tauri/target/release/bundle/macos/Codex Monitor.app" \
             "release-artifacts/CodexMonitor_${VERSION}_${{ matrix.arch }}.zip"
 
           hdiutil create -volname "Codex Monitor" \
-            -srcfolder "release-artifacts/dmg-root-${{ matrix.arch }}" \
+            -srcfolder "release-dmg-root-${{ matrix.arch }}" \
             -ov -format UDZO \
             "release-artifacts/CodexMonitor_${VERSION}_${{ matrix.arch }}.dmg"
 
@@ -84,7 +84,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts-${{ matrix.arch }}
-          path: release-artifacts/*
+          path: |
+            release-artifacts/*.zip
+            release-artifacts/*.dmg
+            release-artifacts/*.app.tar.gz
 
   build_linux:
     name: Linux unsigned bundles (${{ matrix.arch }})
@@ -200,17 +203,22 @@ jobs:
       - name: Normalize filenames and generate checksums
         run: |
           set -euo pipefail
+          rm -rf release-upload
+          mkdir -p release-upload
+
           while IFS= read -r -d '' artifact; do
-            dir=$(dirname "$artifact")
             file=$(basename "$artifact")
             normalized="${file// /.}"
-            if [ "$file" != "$normalized" ]; then
-              mv "$artifact" "${dir}/${normalized}"
+            target="release-upload/${normalized}"
+            if [ -e "$target" ]; then
+              echo "Duplicate release artifact filename after normalization: ${normalized}"
+              exit 1
             fi
+            cp "$artifact" "$target"
           done < <(find release-artifacts -type f -print0)
 
-          find release-artifacts -type f | sort
-          (cd release-artifacts && sha256sum * > SHA256SUMS.txt)
+          find release-upload -maxdepth 1 -type f | sort
+          (cd release-upload && sha256sum * > SHA256SUMS.txt)
 
       - name: Build release notes
         run: |
@@ -218,9 +226,9 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           LAST_TAG=$(git tag --sort=-version:refname | grep -v "^v${VERSION}$" | head -n 1 || true)
           if [ -n "$LAST_TAG" ]; then
-            git log "${LAST_TAG}..${GITHUB_SHA}" --pretty=format:"%s" > release-artifacts/release-commits.txt
+            git log "${LAST_TAG}..${GITHUB_SHA}" --pretty=format:"%s" > release-upload/release-commits.txt
           else
-            git log "${GITHUB_SHA}" --pretty=format:"%s" > release-artifacts/release-commits.txt
+            git log "${GITHUB_SHA}" --pretty=format:"%s" > release-upload/release-commits.txt
           fi
 
           {
@@ -229,8 +237,8 @@ jobs:
             echo "macOS and Windows artifacts are not notarized or code-signed with a paid certificate."
             echo
             echo "## Changes"
-            sed 's/^/- /' release-artifacts/release-commits.txt
-          } > release-artifacts/release-notes.md
+            sed 's/^/- /' release-upload/release-commits.txt
+          } > release-upload/release-notes.md
 
       - name: Create GitHub release
         env:
@@ -239,13 +247,13 @@ jobs:
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
           mapfile -t artifacts < <(
-            find release-artifacts -maxdepth 1 -type f \
+            find release-upload -maxdepth 1 -type f \
               ! -name release-notes.md \
               ! -name release-commits.txt \
               | sort
           )
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
-            --notes-file release-artifacts/release-notes.md \
+            --notes-file release-upload/release-notes.md \
             --target "$GITHUB_SHA" \
             "${artifacts[@]}"
