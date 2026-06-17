@@ -418,4 +418,35 @@ describe("useAccountSwitching", () => {
       root.unmount();
     });
   });
+
+  it("does not alert when saved profiles are unavailable in remote mode", async () => {
+    vi.mocked(listSavedAuthProfiles).mockRejectedValue(
+      new Error("Saved auth profiles are not supported in remote mode"),
+    );
+
+    const refreshAccountInfo = vi.fn();
+    const refreshAccountRateLimits = vi.fn();
+    const alertError = vi.fn();
+
+    const { root } = await mount({
+      activeWorkspaceId: "ws-1",
+      accountByWorkspace: {},
+      activeRateLimits: null,
+      refreshAccountInfo,
+      refreshAccountRateLimits,
+      alertError,
+    });
+
+    await waitFor(() => {
+      expect(listSavedAuthProfiles).toHaveBeenCalledWith("ws-1");
+    });
+
+    expect(latest?.savedProfiles).toEqual([]);
+    expect(latest?.savedProfilesLoading).toBe(false);
+    expect(alertError).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

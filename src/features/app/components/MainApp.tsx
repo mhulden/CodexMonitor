@@ -172,7 +172,6 @@ export default function MainApp() {
     queueSaveSettings,
   });
   const {
-    isMobileRuntime,
     showMobileSetupWizard,
     mobileSetupWizardProps,
     handleMobileConnectSuccess,
@@ -182,7 +181,8 @@ export default function MainApp() {
     queueSaveSettings,
     refreshWorkspaces,
   });
-  const updaterEnabled = !isMobileRuntime;
+  // Community builds are unsigned and do not publish Tauri updater metadata yet.
+  const updaterEnabled = false;
 
   const workspacesById = useMemo(
     () => new Map(workspaces.map((workspace) => [workspace.id, workspace])),

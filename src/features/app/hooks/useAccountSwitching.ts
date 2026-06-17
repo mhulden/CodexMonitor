@@ -60,6 +60,12 @@ function hasUsableRateLimitSnapshot(rateLimits: RateLimitSnapshot | null | undef
   );
 }
 
+function isSavedAuthProfilesUnsupported(error: unknown): boolean {
+  const message =
+    typeof error === "string" ? error : error instanceof Error ? error.message : "";
+  return message.toLowerCase().includes("saved auth profiles are not supported in remote mode");
+}
+
 function normalizeAccountType(value: unknown): SavedAccountProfile["accountType"] {
   const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
   if (normalized === "chatgpt" || normalized === "apikey") {
@@ -207,6 +213,10 @@ export function useAccountSwitching({
       const response = await listSavedAuthProfiles(workspaceId);
       setSavedProfiles(normalizeSavedProfiles(response));
     } catch (error) {
+      if (isSavedAuthProfilesUnsupported(error)) {
+        setSavedProfiles([]);
+        return;
+      }
       alertErrorRef.current(error);
     } finally {
       setSavedProfilesLoading(false);
