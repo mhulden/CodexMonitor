@@ -97,6 +97,7 @@ function makeRateLimits(): RateLimitSnapshot {
     },
     secondary: null,
     credits: null,
+    rateLimitResetCredits: null,
     planType: "pro",
   };
 }

@@ -784,6 +784,16 @@ export async function getAccountRateLimits(workspaceId: string) {
   return invoke<any>("account_rate_limits", { workspaceId });
 }
 
+export async function consumeRateLimitResetCredit(
+  workspaceId: string,
+  idempotencyKey: string,
+) {
+  return invoke<any>("consume_rate_limit_reset_credit", {
+    workspaceId,
+    idempotencyKey,
+  });
+}
+
 export async function getAccountInfo(workspaceId: string) {
   return invoke<any>("account_read", { workspaceId });
 }

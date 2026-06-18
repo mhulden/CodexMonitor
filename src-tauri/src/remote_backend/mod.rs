@@ -146,6 +146,7 @@ fn can_retry_after_disconnect(method: &str) -> bool {
     matches!(
         method,
         "account_rate_limits"
+            | "consume_rate_limit_reset_credit"
             | "account_read"
             | "apps_list"
             | "collaboration_mode_list"

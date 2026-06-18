@@ -732,6 +732,34 @@ pub(crate) async fn account_rate_limits(
 }
 
 #[tauri::command]
+pub(crate) async fn consume_rate_limit_reset_credit(
+    workspace_id: String,
+    idempotency_key: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "consume_rate_limit_reset_credit",
+            json!({
+                "workspaceId": workspace_id,
+                "idempotencyKey": idempotency_key,
+            }),
+        )
+        .await;
+    }
+
+    codex_core::consume_rate_limit_reset_credit_core(
+        &state.sessions,
+        workspace_id,
+        idempotency_key,
+    )
+    .await
+}
+
+#[tauri::command]
 pub(crate) async fn account_read(
     workspace_id: String,
     state: State<'_, AppState>,

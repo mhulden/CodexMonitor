@@ -41,6 +41,8 @@ const baseProps = {
   onCancelSwitchAccount: vi.fn(),
   onActivateSavedProfile: vi.fn(),
   accountSwitching: false,
+  onResetUsageLimit: vi.fn(),
+  resettingUsageLimit: false,
   onOpenSettings: vi.fn(),
   onOpenDebug: vi.fn(),
   showDebugButton: false,
@@ -148,6 +150,7 @@ describe("Sidebar", () => {
             unlimited: false,
             balance: "120",
           },
+          rateLimitResetCredits: null,
           planType: "pro",
         }}
       />,
@@ -155,6 +158,38 @@ describe("Sidebar", () => {
 
     const creditsLabel = screen.getByText(/^Available credits:/);
     expect(creditsLabel.textContent ?? "").toContain("120");
+  });
+
+  it("shows reset credits and invokes the reset action", () => {
+    const onResetUsageLimit = vi.fn();
+    render(
+      <Sidebar
+        {...baseProps}
+        activeWorkspaceId="ws-1"
+        onResetUsageLimit={onResetUsageLimit}
+        accountRateLimits={{
+          primary: {
+            usedPercent: 62,
+            windowDurationMins: 300,
+            resetsAt: Math.round(Date.now() / 1000) + 3600,
+          },
+          secondary: null,
+          credits: null,
+          rateLimitResetCredits: {
+            availableCount: 2,
+          },
+          planType: "pro",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("2 resets")).toBeTruthy();
+    const resetButton = screen.getByRole("button", { name: "Reset usage limit" });
+    expect((resetButton as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(resetButton);
+
+    expect(onResetUsageLimit).toHaveBeenCalledTimes(1);
   });
 
   it("opens the account menu from the bottom rail", () => {

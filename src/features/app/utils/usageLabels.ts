@@ -7,6 +7,7 @@ type UsageLabels = {
   sessionResetLabel: string | null;
   weeklyResetLabel: string | null;
   creditsLabel: string | null;
+  resetCreditsLabel: string | null;
   showWeekly: boolean;
 };
 
@@ -46,6 +47,15 @@ function formatCreditsLabel(accountRateLimits: RateLimitSnapshot | null) {
   return null;
 }
 
+function formatResetCreditsLabel(accountRateLimits: RateLimitSnapshot | null) {
+  const count = accountRateLimits?.rateLimitResetCredits?.availableCount;
+  if (typeof count !== "number" || count <= 0) {
+    return null;
+  }
+  const normalized = Math.floor(count);
+  return `${normalized} ${normalized === 1 ? "reset" : "resets"}`;
+}
+
 export function getUsageLabels(
   accountRateLimits: RateLimitSnapshot | null,
   showRemaining: boolean,
@@ -71,6 +81,7 @@ export function getUsageLabels(
     sessionResetLabel: formatResetLabel(accountRateLimits?.primary?.resetsAt),
     weeklyResetLabel: formatResetLabel(accountRateLimits?.secondary?.resetsAt),
     creditsLabel: formatCreditsLabel(accountRateLimits),
+    resetCreditsLabel: formatResetCreditsLabel(accountRateLimits),
     showWeekly: Boolean(accountRateLimits?.secondary),
   };
 }

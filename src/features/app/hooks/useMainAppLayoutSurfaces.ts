@@ -68,6 +68,8 @@ type UseMainAppLayoutSurfacesArgs = {
   onSwitchAccount: SidebarProps["onSwitchAccount"];
   onCancelSwitchAccount: SidebarProps["onCancelSwitchAccount"];
   onActivateSavedProfile: SidebarProps["onActivateSavedProfile"];
+  onResetUsageLimit: SidebarProps["onResetUsageLimit"];
+  resettingUsageLimit: SidebarProps["resettingUsageLimit"];
   onDecision: LayoutNodesOptions["primary"]["approvalToastsProps"]["onDecision"];
   onRemember: LayoutNodesOptions["primary"]["approvalToastsProps"]["onRemember"];
   onUserInputSubmit: LayoutNodesOptions["primary"]["messagesProps"]["onUserInputSubmit"];
@@ -275,6 +277,8 @@ function buildPrimarySurface({
   onSwitchAccount,
   onCancelSwitchAccount,
   onActivateSavedProfile,
+  onResetUsageLimit,
+  resettingUsageLimit,
   onDecision,
   onRemember,
   onUserInputSubmit,
@@ -417,6 +421,8 @@ function buildPrimarySurface({
       onCancelSwitchAccount,
       onActivateSavedProfile,
       accountSwitching,
+      onResetUsageLimit,
+      resettingUsageLimit,
       onOpenSettings: sidebarHandlers.onOpenSettings,
       onOpenDebug: handleDebugClick,
       showDebugButton,
@@ -995,6 +1001,8 @@ export function useMainAppLayoutSurfaces({
   onSwitchAccount,
   onCancelSwitchAccount,
   onActivateSavedProfile,
+  onResetUsageLimit,
+  resettingUsageLimit,
   onDecision,
   onRemember,
   onUserInputSubmit,
@@ -1161,6 +1169,8 @@ export function useMainAppLayoutSurfaces({
     onSwitchAccount,
     onCancelSwitchAccount,
     onActivateSavedProfile,
+    onResetUsageLimit,
+    resettingUsageLimit,
     onDecision,
     onRemember,
     onUserInputSubmit,

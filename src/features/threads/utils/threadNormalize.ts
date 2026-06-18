@@ -1,5 +1,6 @@
 import type {
   CreditsSnapshot,
+  RateLimitResetCreditsSnapshot,
   RateLimitWindow,
   RateLimitSnapshot,
   ReviewTarget,
@@ -138,6 +139,20 @@ function normalizeCreditsSnapshot(
   };
 }
 
+function normalizeRateLimitResetCreditsSnapshot(
+  source: Record<string, unknown>,
+  previousResetCredits: RateLimitResetCreditsSnapshot | null,
+): RateLimitResetCreditsSnapshot {
+  const rawAvailableCount = source.availableCount ?? source.available_count;
+  const parsedAvailableCount = asFiniteNumber(rawAvailableCount);
+  return {
+    availableCount:
+      parsedAvailableCount !== null
+        ? Math.max(0, Math.floor(parsedAvailableCount))
+        : previousResetCredits?.availableCount ?? 0,
+  };
+}
+
 export function normalizeStringList(value: unknown) {
   if (Array.isArray(value)) {
     return value.map((entry) => asString(entry)).filter(Boolean);
@@ -257,6 +272,7 @@ export function normalizeRateLimits(
   const previousPrimary = previous?.primary ?? null;
   const previousSecondary = previous?.secondary ?? null;
   const previousCredits = previous?.credits ?? null;
+  const previousResetCredits = previous?.rateLimitResetCredits ?? null;
 
   const primary =
     hasOwn(raw, "primary")
@@ -307,11 +323,27 @@ export function normalizeRateLimits(
       : typeof raw.plan_type === "string"
         ? raw.plan_type
         : null;
+  const hasResetCreditsKey =
+    hasOwn(raw, "rateLimitResetCredits") || hasOwn(raw, "rate_limit_reset_credits");
+  const resetCreditsRaw = raw.rateLimitResetCredits ?? raw.rate_limit_reset_credits;
+  const rateLimitResetCredits = hasResetCreditsKey
+    ? resetCreditsRaw === null
+      ? null
+      : resetCreditsRaw &&
+          typeof resetCreditsRaw === "object" &&
+          !Array.isArray(resetCreditsRaw)
+        ? normalizeRateLimitResetCreditsSnapshot(
+            resetCreditsRaw as Record<string, unknown>,
+            previousResetCredits,
+          )
+        : previousResetCredits
+    : previousResetCredits;
 
   return {
     primary,
     secondary,
     credits,
+    rateLimitResetCredits,
     planType: planTypeValue ?? (hasPlanTypeKey ? null : previous?.planType ?? null),
   };
 }

@@ -78,6 +78,9 @@ describe("normalizeRateLimits", () => {
         unlimited: false,
         balance: "120",
       },
+      rateLimitResetCredits: {
+        availableCount: 2,
+      },
       planType: "pro",
     } as const;
 
@@ -105,6 +108,9 @@ describe("normalizeRateLimits", () => {
         hasCredits: true,
         unlimited: false,
         balance: "110",
+      },
+      rateLimitResetCredits: {
+        availableCount: 2,
       },
       planType: "pro",
     });
@@ -191,6 +197,7 @@ describe("normalizeRateLimits", () => {
         unlimited: false,
         balance: "120",
       },
+      rateLimitResetCredits: null,
       planType: null,
     } as const;
 
@@ -219,6 +226,7 @@ describe("normalizeRateLimits", () => {
         unlimited: false,
         balance: "120",
       },
+      rateLimitResetCredits: null,
       planType: null,
     } as const;
 
@@ -249,6 +257,7 @@ describe("normalizeRateLimits", () => {
           unlimited: true,
           balance: "120",
         },
+        rateLimitResetCredits: null,
         planType: null,
       } as const;
 
@@ -290,6 +299,7 @@ describe("normalizeRateLimits", () => {
         unlimited: false,
         balance: "120",
       },
+      rateLimitResetCredits: null,
       planType: null,
     } as const;
 
@@ -303,5 +313,21 @@ describe("normalizeRateLimits", () => {
     );
 
     expect(normalized.credits).toEqual(previous.credits);
+  });
+
+  it("normalizes and preserves earned reset credits", () => {
+    const previous = normalizeRateLimits({
+      rateLimitResetCredits: { availableCount: 2 },
+    });
+
+    expect(previous.rateLimitResetCredits).toEqual({ availableCount: 2 });
+
+    const updated = normalizeRateLimits({ primary: {} }, previous);
+    expect(updated.rateLimitResetCredits).toEqual({ availableCount: 2 });
+
+    const snakeCase = normalizeRateLimits({
+      rate_limit_reset_credits: { available_count: "3.9" },
+    });
+    expect(snakeCase.rateLimitResetCredits).toEqual({ availableCount: 3 });
   });
 });

@@ -12,6 +12,35 @@ type UseThreadRateLimitsOptions = {
   onDebug?: (entry: DebugEntry) => void;
 };
 
+function extractRateLimitSnapshotPayload(
+  response: any,
+): Record<string, unknown> | null {
+  const result =
+    response?.result && typeof response.result === "object"
+      ? response.result
+      : null;
+  const rateLimits =
+    (result?.rateLimits as Record<string, unknown> | undefined) ??
+    (result?.rate_limits as Record<string, unknown> | undefined) ??
+    (response?.rateLimits as Record<string, unknown> | undefined) ??
+    (response?.rate_limits as Record<string, unknown> | undefined);
+  if (!rateLimits || typeof rateLimits !== "object" || Array.isArray(rateLimits)) {
+    return null;
+  }
+  const resetCredits =
+    result?.rateLimitResetCredits ??
+    result?.rate_limit_reset_credits ??
+    response?.rateLimitResetCredits ??
+    response?.rate_limit_reset_credits;
+  if (resetCredits === undefined) {
+    return rateLimits;
+  }
+  return {
+    ...rateLimits,
+    rateLimitResetCredits: resetCredits,
+  };
+}
+
 export function useThreadRateLimits({
   activeWorkspaceId,
   activeWorkspaceConnected,
@@ -46,11 +75,7 @@ export function useThreadRateLimits({
           label: "account/rateLimits/read response",
           payload: response,
         });
-        const rateLimits =
-          (response?.result?.rateLimits as Record<string, unknown> | undefined) ??
-          (response?.result?.rate_limits as Record<string, unknown> | undefined) ??
-          (response?.rateLimits as Record<string, unknown> | undefined) ??
-          (response?.rate_limits as Record<string, unknown> | undefined);
+        const rateLimits = extractRateLimitSnapshotPayload(response);
         if (rateLimits) {
           const previousRateLimits =
             getCurrentRateLimitsRef.current?.(targetId) ?? null;

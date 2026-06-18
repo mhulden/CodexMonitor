@@ -49,6 +49,7 @@ import {
   writeGlobalCodexConfigToml,
   createAgent,
   updateAgent,
+  consumeRateLimitResetCredit,
   deleteAgent,
   readAgentConfigToml,
   readImageAsDataUrl,
@@ -340,6 +341,18 @@ describe("tauri invoke wrappers", () => {
       workspaceId: "ws-9",
       threadId: "thread-9",
       name: "New Name",
+    });
+  });
+
+  it("maps workspaceId/idempotencyKey for consume_rate_limit_reset_credit", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await consumeRateLimitResetCredit("ws-10", "key-1");
+
+    expect(invokeMock).toHaveBeenCalledWith("consume_rate_limit_reset_credit", {
+      workspaceId: "ws-10",
+      idempotencyKey: "key-1",
     });
   });
 

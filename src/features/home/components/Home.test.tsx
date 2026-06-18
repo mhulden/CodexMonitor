@@ -272,6 +272,7 @@ describe("Home", () => {
             unlimited: true,
             balance: null,
           },
+          rateLimitResetCredits: null,
           planType: "pro",
         }}
         accountInfo={{
@@ -348,6 +349,7 @@ describe("Home", () => {
             unlimited: false,
             balance: "120",
           },
+          rateLimitResetCredits: null,
           planType: "pro",
         }}
         accountInfo={{

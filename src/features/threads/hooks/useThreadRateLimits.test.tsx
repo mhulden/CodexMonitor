@@ -96,6 +96,40 @@ describe("useThreadRateLimits", () => {
     });
   });
 
+  it("merges reset credits from the rate limits read snapshot", async () => {
+    const dispatch = vi.fn();
+    const rawRateLimits = {
+      primary: { usedPercent: 10, windowDurationMins: 30, resetsAt: 777 },
+    };
+
+    vi.mocked(getAccountRateLimits).mockResolvedValue({
+      result: {
+        rateLimits: rawRateLimits,
+        rateLimitResetCredits: { availableCount: 2 },
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useThreadRateLimits({
+        activeWorkspaceId: "ws-1",
+        dispatch,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.refreshAccountRateLimits();
+    });
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "setRateLimits",
+      workspaceId: "ws-1",
+      rateLimits: {
+        ...normalizeRateLimits(rawRateLimits),
+        rateLimitResetCredits: { availableCount: 2 },
+      },
+    });
+  });
+
   it("does not auto-refresh again when accessor callback identity changes", async () => {
     const dispatch = vi.fn();
 
@@ -183,6 +217,7 @@ describe("useThreadRateLimits", () => {
         unlimited: false,
         balance: "5",
       },
+      rateLimitResetCredits: null,
       planType: "pro",
     } as const;
 
@@ -226,6 +261,7 @@ describe("useThreadRateLimits", () => {
           unlimited: false,
           balance: "5",
         },
+        rateLimitResetCredits: null,
         planType: "pro",
       },
     });

@@ -621,10 +621,15 @@ export type CreditsSnapshot = {
   balance: string | null;
 };
 
+export type RateLimitResetCreditsSnapshot = {
+  availableCount: number;
+};
+
 export type RateLimitSnapshot = {
   primary: RateLimitWindow | null;
   secondary: RateLimitWindow | null;
   credits: CreditsSnapshot | null;
+  rateLimitResetCredits: RateLimitResetCreditsSnapshot | null;
   planType: string | null;
 };
 

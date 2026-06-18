@@ -1744,6 +1744,23 @@
   line-height: 1.2;
 }
 
+.sidebar-usage-reset-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sidebar-usage-reset-credit {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: right;
+}
+
 .sidebar-bottom-actions {
   display: flex;
   flex-direction: row;
@@ -1763,9 +1780,9 @@
 
 .sidebar-account-menu {
   position: relative;
-  flex: 1 1 0;
+  flex: 0 0 auto;
   min-width: 0;
-  width: auto;
+  width: 34px;
 }
 
 .sidebar-labeled-button {
@@ -1811,7 +1828,8 @@
 .sidebar-account-trigger {
   width: 100%;
   min-width: 0;
-  justify-content: flex-start;
+  justify-content: center;
+  padding-inline: 6px;
 }
 
 .sidebar-account-trigger-content {
@@ -1841,14 +1859,7 @@
 }
 
 .sidebar-account-trigger-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  color: inherit;
+  display: none;
 }
 
 .sidebar-account-popover {
@@ -2016,13 +2027,46 @@
 
 .sidebar-utility-button {
   height: 34px;
-  justify-content: flex-start;
-  flex: 1;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  padding-inline: 6px;
 }
 
 .sidebar-utility-button svg {
   width: 14px;
   height: 14px;
+}
+
+.sidebar-utility-label {
+  display: none;
+}
+
+.sidebar-reset-button {
+  flex: 1 1 auto;
+  min-width: 72px;
+  justify-content: center;
+  color: var(--status-error);
+  border-color: color-mix(in srgb, var(--status-error) 34%, var(--border-quiet));
+  background: color-mix(in srgb, var(--status-error) 10%, var(--surface-hover));
+}
+
+.sidebar-reset-button:hover:not(:disabled),
+.sidebar-reset-button:focus-visible:not(:disabled) {
+  color: var(--status-error);
+  border-color: color-mix(in srgb, var(--status-error) 54%, var(--border-subtle));
+  background: color-mix(in srgb, var(--status-error) 16%, var(--surface-hover));
+}
+
+.sidebar-reset-button:disabled {
+  color: var(--text-faint);
+  border-color: var(--border-quiet);
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+  cursor: not-allowed;
+}
+
+.sidebar-reset-button[aria-busy="true"] .sidebar-labeled-button-icon {
+  animation: sidebar-account-spin var(--ds-spinner-dur) linear infinite;
 }
 
 

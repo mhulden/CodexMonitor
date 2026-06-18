@@ -129,6 +129,8 @@ type SidebarProps = {
   onCancelSwitchAccount: () => void;
   onActivateSavedProfile: (profileId: string) => void;
   accountSwitching: boolean;
+  onResetUsageLimit: () => void;
+  resettingUsageLimit: boolean;
   onOpenSettings: () => void;
   onOpenDebug: () => void;
   showDebugButton: boolean;
@@ -194,6 +196,8 @@ export const Sidebar = memo(function Sidebar({
   onCancelSwitchAccount,
   onActivateSavedProfile,
   accountSwitching,
+  onResetUsageLimit,
+  resettingUsageLimit,
   onOpenSettings,
   onOpenDebug,
   showDebugButton,
@@ -268,6 +272,7 @@ export const Sidebar = memo(function Sidebar({
     sessionResetLabel,
     weeklyResetLabel,
     creditsLabel,
+    resetCreditsLabel,
     showWeekly,
   } = getUsageLabels(accountRateLimits, usageShowRemaining);
   const debouncedQuery = useDebouncedValue(searchQuery, 150);
@@ -1042,7 +1047,15 @@ export const Sidebar = memo(function Sidebar({
         sessionResetLabel={sessionResetLabel}
         weeklyResetLabel={weeklyResetLabel}
         creditsLabel={creditsLabel}
+        resetCreditsLabel={resetCreditsLabel}
         showWeekly={showWeekly}
+        onResetUsageLimit={onResetUsageLimit}
+        resetUsageDisabled={
+          resettingUsageLimit ||
+          !activeWorkspaceId ||
+          !accountRateLimits?.rateLimitResetCredits?.availableCount
+        }
+        resettingUsageLimit={resettingUsageLimit}
         onOpenSettings={onOpenSettings}
         onOpenDebug={onOpenDebug}
         showDebugButton={showDebugButton}

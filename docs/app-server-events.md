@@ -166,12 +166,14 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 - `account/login/start`
 - `account/login/cancel`
 - `account/rateLimits/read`
+- `account/rateLimitResetCredit/consume`
 - `account/read`
 - `skills/list`
 - `app/list`
 
 Notes:
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
+- `account/rateLimits/read` may return snapshot-only `rateLimitResetCredits.availableCount`; `account/rateLimitResetCredit/consume` spends one earned reset with an idempotency key. Clients should refetch `account/rateLimits/read` after each consume attempt.
 
 ## Missing Client Requests (Codex v2 ClientRequest Methods)
 

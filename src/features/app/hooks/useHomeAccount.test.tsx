@@ -52,6 +52,7 @@ function makeRateLimits(
     },
     secondary: null,
     credits: null,
+    rateLimitResetCredits: null,
     planType: "pro",
     ...overrides,
   };

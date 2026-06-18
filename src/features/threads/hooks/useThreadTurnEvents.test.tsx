@@ -763,6 +763,7 @@ describe("useThreadTurnEvents", () => {
       },
       secondary: null,
       credits: null,
+      rateLimitResetCredits: null,
       planType: null,
     } satisfies RateLimitSnapshot;
 

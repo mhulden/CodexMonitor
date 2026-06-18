@@ -1,3 +1,4 @@
+import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import ScrollText from "lucide-react/dist/esm/icons/scroll-text";
 import Settings from "lucide-react/dist/esm/icons/settings";
 import User from "lucide-react/dist/esm/icons/user";
@@ -17,7 +18,11 @@ type SidebarBottomRailProps = {
   sessionResetLabel: string | null;
   weeklyResetLabel: string | null;
   creditsLabel: string | null;
+  resetCreditsLabel: string | null;
   showWeekly: boolean;
+  onResetUsageLimit: () => void;
+  resetUsageDisabled: boolean;
+  resettingUsageLimit: boolean;
   onOpenSettings: () => void;
   onOpenDebug: () => void;
   showDebugButton: boolean;
@@ -40,9 +45,10 @@ type UsageRowProps = {
   label: string;
   percent: number | null;
   resetLabel: string | null;
+  resetCreditsLabel?: string | null;
 };
 
-function UsageRow({ label, percent, resetLabel }: UsageRowProps) {
+function UsageRow({ label, percent, resetLabel, resetCreditsLabel }: UsageRowProps) {
   return (
     <div className="sidebar-usage-row">
       <div className="sidebar-usage-row-head">
@@ -54,7 +60,14 @@ function UsageRow({ label, percent, resetLabel }: UsageRowProps) {
       <div className="sidebar-usage-bar" aria-hidden>
         <span className="sidebar-usage-bar-fill" style={{ width: `${percent ?? 0}%` }} />
       </div>
-      {resetLabel && <div className="sidebar-usage-reset">{resetLabel}</div>}
+      {(resetLabel || resetCreditsLabel) && (
+        <div className="sidebar-usage-reset-row">
+          {resetLabel && <span className="sidebar-usage-reset">{resetLabel}</span>}
+          {resetCreditsLabel && (
+            <span className="sidebar-usage-reset-credit">{resetCreditsLabel}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -85,7 +98,11 @@ export function SidebarBottomRail({
   sessionResetLabel,
   weeklyResetLabel,
   creditsLabel,
+  resetCreditsLabel,
   showWeekly,
+  onResetUsageLimit,
+  resetUsageDisabled,
+  resettingUsageLimit,
   onOpenSettings,
   onOpenDebug,
   showDebugButton,
@@ -142,6 +159,7 @@ export function SidebarBottomRail({
             label="Session"
             percent={sessionPercent}
             resetLabel={sessionResetLabel}
+            resetCreditsLabel={resetCreditsLabel}
           />
           {showWeekly && (
             <UsageRow
@@ -164,6 +182,7 @@ export function SidebarBottomRail({
               activeClassName="is-open"
               onClick={toggleAccountMenu}
               aria-label="Account"
+              title="Account"
             >
               <span className="sidebar-account-trigger-content">
                 <span className="sidebar-account-avatar" aria-hidden>
@@ -274,23 +293,39 @@ export function SidebarBottomRail({
           </div>
         )}
         <div className="sidebar-utility-actions">
-            <button
-              className="ghost sidebar-labeled-button sidebar-utility-button"
-              type="button"
-              onClick={onOpenSettings}
-              aria-label="Open settings"
-            >
-              <span className="sidebar-labeled-button-icon" aria-hidden>
-                <Settings size={14} aria-hidden />
-              </span>
-              <span>Settings</span>
-            </button>
+          <button
+            className="ghost sidebar-labeled-button sidebar-reset-button"
+            type="button"
+            onClick={onResetUsageLimit}
+            disabled={resetUsageDisabled}
+            aria-label="Reset usage limit"
+            aria-busy={resettingUsageLimit}
+            title={resetUsageDisabled ? "No reset credits available" : "Use 1 reset credit"}
+          >
+            <span className="sidebar-labeled-button-icon" aria-hidden>
+              <RefreshCw size={14} aria-hidden />
+            </span>
+            <span>Reset</span>
+          </button>
+          <button
+            className="ghost sidebar-labeled-button sidebar-utility-button"
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open settings"
+            title="Settings"
+          >
+            <span className="sidebar-labeled-button-icon" aria-hidden>
+              <Settings size={14} aria-hidden />
+            </span>
+            <span className="sidebar-utility-label">Settings</span>
+          </button>
           {showDebugButton && (
             <button
               className="ghost sidebar-utility-button"
               type="button"
               onClick={onOpenDebug}
               aria-label="Open debug log"
+              title="Debug"
             >
               <ScrollText size={14} aria-hidden />
             </button>

@@ -392,6 +392,21 @@ pub(super) async fn try_handle(
             };
             Some(state.account_rate_limits(workspace_id).await)
         }
+        "consume_rate_limit_reset_credit" => {
+            let workspace_id = match parse_string(params, "workspaceId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let idempotency_key = match parse_string(params, "idempotencyKey") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            Some(
+                state
+                    .consume_rate_limit_reset_credit(workspace_id, idempotency_key)
+                    .await,
+            )
+        }
         "account_read" => {
             let workspace_id = match parse_string(params, "workspaceId") {
                 Ok(value) => value,
