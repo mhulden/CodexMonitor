@@ -59,6 +59,8 @@ type UseMainAppLayoutSurfacesArgs = {
   approvals: LayoutNodesOptions["primary"]["approvalToastsProps"]["approvals"];
   activeRateLimits: SidebarProps["accountRateLimits"];
   activeAccount: SidebarProps["accountInfo"];
+  accountWorkspaceId: SidebarProps["accountWorkspaceId"];
+  homeAccountWorkspaceId: string | null;
   homeRateLimits: LayoutNodesOptions["primary"]["homeProps"]["accountRateLimits"];
   homeAccount: LayoutNodesOptions["primary"]["homeProps"]["accountInfo"];
   accountSwitching: SidebarProps["accountSwitching"];
@@ -237,6 +239,8 @@ type UseMainAppLayoutSurfacesArgs = {
 type MainAppLayoutSurfacesContext = UseMainAppLayoutSurfacesArgs & {
   sidebarRateLimits: SidebarProps["accountRateLimits"];
   sidebarAccount: SidebarProps["accountInfo"];
+  accountWorkspaceId: SidebarProps["accountWorkspaceId"];
+  resetUsageWorkspaceId: SidebarProps["resetUsageWorkspaceId"];
 };
 
 function buildPrimarySurface({
@@ -268,6 +272,8 @@ function buildPrimarySurface({
   approvals,
   sidebarRateLimits,
   sidebarAccount,
+  accountWorkspaceId,
+  resetUsageWorkspaceId,
   homeRateLimits,
   homeAccount,
   accountSwitching,
@@ -412,6 +418,8 @@ function buildPrimarySurface({
       activeThreadId,
       userInputRequests,
       accountRateLimits: sidebarRateLimits,
+      accountWorkspaceId,
+      resetUsageWorkspaceId,
       usageShowRemaining: appSettings.usageShowRemaining,
       accountInfo: sidebarAccount,
       savedProfiles,
@@ -992,6 +1000,8 @@ export function useMainAppLayoutSurfaces({
   approvals,
   activeRateLimits,
   activeAccount,
+  accountWorkspaceId,
+  homeAccountWorkspaceId,
   homeRateLimits,
   homeAccount,
   accountSwitching,
@@ -1131,6 +1141,7 @@ export function useMainAppLayoutSurfaces({
 }: UseMainAppLayoutSurfacesArgs): LayoutNodesOptions {
   const sidebarRateLimits = activeWorkspace ? activeRateLimits : homeRateLimits;
   const sidebarAccount = activeWorkspace ? activeAccount : homeAccount;
+  const resetUsageWorkspaceId = activeWorkspace ? activeWorkspaceId : homeAccountWorkspaceId;
   const context: MainAppLayoutSurfacesContext = {
     appSettings,
     workspaces,
@@ -1160,6 +1171,8 @@ export function useMainAppLayoutSurfaces({
     approvals,
     activeRateLimits,
     activeAccount,
+    accountWorkspaceId,
+    homeAccountWorkspaceId,
     homeRateLimits,
     homeAccount,
     accountSwitching,
@@ -1298,6 +1311,7 @@ export function useMainAppLayoutSurfaces({
     handleDebugClick,
     sidebarRateLimits,
     sidebarAccount,
+    resetUsageWorkspaceId,
   };
 
   return {

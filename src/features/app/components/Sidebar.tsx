@@ -120,6 +120,8 @@ type SidebarProps = {
   activeThreadId: string | null;
   userInputRequests?: RequestUserInputRequest[];
   accountRateLimits: RateLimitSnapshot | null;
+  accountWorkspaceId: string | null;
+  resetUsageWorkspaceId: string | null;
   usageShowRemaining: boolean;
   accountInfo: AccountSnapshot | null;
   savedProfiles: SavedAccountProfile[];
@@ -187,6 +189,8 @@ export const Sidebar = memo(function Sidebar({
   activeThreadId,
   userInputRequests = [],
   accountRateLimits,
+  accountWorkspaceId,
+  resetUsageWorkspaceId,
   usageShowRemaining,
   accountInfo,
   savedProfiles,
@@ -375,9 +379,9 @@ export const Sidebar = memo(function Sidebar({
       ? "API key"
       : "Sign in to Codex";
   const accountActionLabel = accountEmail ? "Switch account" : "Sign in";
-  const showAccountSwitcher = Boolean(activeWorkspaceId);
-  const accountSwitchDisabled = accountSwitching || !activeWorkspaceId;
-  const accountCancelDisabled = !accountSwitching || !activeWorkspaceId;
+  const showAccountSwitcher = Boolean(accountWorkspaceId);
+  const accountSwitchDisabled = accountSwitching || !accountWorkspaceId;
+  const accountCancelDisabled = !accountSwitching || !accountWorkspaceId;
   const refreshDisabled = workspaces.length === 0 || workspaces.every((workspace) => !workspace.connected);
   const refreshInProgress = workspaces.some(
     (workspace) => threadListLoadingByWorkspace[workspace.id] ?? false,
@@ -1052,7 +1056,7 @@ export const Sidebar = memo(function Sidebar({
         onResetUsageLimit={onResetUsageLimit}
         resetUsageDisabled={
           resettingUsageLimit ||
-          !activeWorkspaceId ||
+          !resetUsageWorkspaceId ||
           !accountRateLimits?.rateLimitResetCredits?.availableCount
         }
         resettingUsageLimit={resettingUsageLimit}

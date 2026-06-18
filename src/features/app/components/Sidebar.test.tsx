@@ -32,6 +32,8 @@ const baseProps = {
   activeWorkspaceId: null,
   activeThreadId: null,
   accountRateLimits: null,
+  accountWorkspaceId: null,
+  resetUsageWorkspaceId: null,
   usageShowRemaining: false,
   accountInfo: null,
   savedProfiles: [],
@@ -166,6 +168,8 @@ describe("Sidebar", () => {
       <Sidebar
         {...baseProps}
         activeWorkspaceId="ws-1"
+        accountWorkspaceId="ws-1"
+        resetUsageWorkspaceId="ws-1"
         onResetUsageLimit={onResetUsageLimit}
         accountRateLimits={{
           primary: {
@@ -192,11 +196,45 @@ describe("Sidebar", () => {
     expect(onResetUsageLimit).toHaveBeenCalledTimes(1);
   });
 
+  it("enables reset credits for the Home account workspace before a chat is active", () => {
+    const onResetUsageLimit = vi.fn();
+    render(
+      <Sidebar
+        {...baseProps}
+        activeWorkspaceId={null}
+        accountWorkspaceId="ws-1"
+        resetUsageWorkspaceId="ws-1"
+        onResetUsageLimit={onResetUsageLimit}
+        accountRateLimits={{
+          primary: {
+            usedPercent: 100,
+            windowDurationMins: 300,
+            resetsAt: Math.round(Date.now() / 1000) + 3600,
+          },
+          secondary: null,
+          credits: null,
+          rateLimitResetCredits: {
+            availableCount: 2,
+          },
+          planType: "pro",
+        }}
+      />,
+    );
+
+    const resetButton = screen.getByRole("button", { name: "Reset usage limit" });
+    expect((resetButton as HTMLButtonElement).disabled).toBe(false);
+
+    fireEvent.click(resetButton);
+
+    expect(onResetUsageLimit).toHaveBeenCalledTimes(1);
+  });
+
   it("opens the account menu from the bottom rail", () => {
     render(
       <Sidebar
         {...baseProps}
         activeWorkspaceId="ws-1"
+        accountWorkspaceId="ws-1"
         accountInfo={{
           email: "dimillian@example.com",
           type: "chatgpt",
@@ -209,6 +247,27 @@ describe("Sidebar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Account" }));
 
     expect(screen.getByText("dimillian@example.com")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Switch account" })).toBeTruthy();
+  });
+
+  it("shows the account menu for the Home account workspace before a chat is active", () => {
+    render(
+      <Sidebar
+        {...baseProps}
+        activeWorkspaceId={null}
+        accountWorkspaceId="ws-1"
+        accountInfo={{
+          email: "home@example.com",
+          type: "chatgpt",
+          planType: "plus",
+          requiresOpenaiAuth: false,
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Account" }));
+
+    expect(screen.getByText("home@example.com")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Switch account" })).toBeTruthy();
   });
 

@@ -718,95 +718,6 @@ export default function MainApp() {
   });
 
   const {
-    activeAccount,
-    accountSwitching,
-    savedProfiles,
-    savedProfilesLoading,
-    activatingProfileId,
-    handleSwitchAccount,
-    handleCancelSwitchAccount,
-    handleActivateSavedProfile,
-  } = useAccountSwitching({
-    activeWorkspaceId,
-    accountByWorkspace,
-    activeRateLimits,
-    refreshAccountInfo,
-    refreshAccountRateLimits,
-    alertError,
-  });
-  const handleResetUsageLimit = useCallback(async () => {
-    const workspaceId = activeWorkspaceId;
-    const availableCount = activeRateLimits?.rateLimitResetCredits?.availableCount ?? 0;
-    if (!workspaceId || availableCount <= 0 || resettingUsageLimit) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "Use 1 reset credit to reset your Codex usage limit?",
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    const idempotencyKey =
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-    setResettingUsageLimit(true);
-    addDebugEntry({
-      id: `${Date.now()}-client-rate-limit-reset`,
-      timestamp: Date.now(),
-      source: "client",
-      label: "account/rateLimitResetCredit/consume",
-      payload: { workspaceId, idempotencyKey },
-    });
-
-    try {
-      const response = await consumeRateLimitResetCredit(workspaceId, idempotencyKey);
-      addDebugEntry({
-        id: `${Date.now()}-server-rate-limit-reset`,
-        timestamp: Date.now(),
-        source: "server",
-        label: "account/rateLimitResetCredit/consume response",
-        payload: response,
-      });
-      const result =
-        response?.result && typeof response.result === "object"
-          ? response.result
-          : response;
-      const outcome = typeof result?.outcome === "string" ? result.outcome : null;
-      if (outcome === "noCredit") {
-        alertError("No reset credits are available.");
-      } else if (outcome === "nothingToReset") {
-        alertError("There is no active usage limit to reset.");
-      }
-      await refreshAccountRateLimits(workspaceId);
-    } catch (error) {
-      addDebugEntry({
-        id: `${Date.now()}-client-rate-limit-reset-error`,
-        timestamp: Date.now(),
-        source: "error",
-        label: "account/rateLimitResetCredit/consume error",
-        payload: error instanceof Error ? error.message : String(error),
-      });
-      alertError(
-        error instanceof Error
-          ? `Reset failed: ${error.message}`
-          : "Reset failed.",
-      );
-    } finally {
-      setResettingUsageLimit(false);
-    }
-  }, [
-    activeRateLimits?.rateLimitResetCredits?.availableCount,
-    activeWorkspaceId,
-    addDebugEntry,
-    alertError,
-    refreshAccountRateLimits,
-    resettingUsageLimit,
-  ]);
-  const {
     newAgentDraftWorkspaceId,
     startingDraftThreadWorkspaceId,
     isDraftModeForActiveWorkspace: isNewAgentDraftMode,
@@ -1146,6 +1057,7 @@ export default function MainApp() {
   });
 
   const {
+    homeAccountWorkspaceId,
     homeAccount,
     homeRateLimits,
   } = useHomeAccount({
@@ -1159,6 +1071,99 @@ export default function MainApp() {
     refreshAccountInfo,
     refreshAccountRateLimits,
   });
+  const accountWorkspaceId = activeWorkspace ? activeWorkspaceId : homeAccountWorkspaceId;
+  const accountWorkspaceRateLimits = activeWorkspace ? activeRateLimits : homeRateLimits;
+  const {
+    activeAccount,
+    accountSwitching,
+    savedProfiles,
+    savedProfilesLoading,
+    activatingProfileId,
+    handleSwitchAccount,
+    handleCancelSwitchAccount,
+    handleActivateSavedProfile,
+  } = useAccountSwitching({
+    activeWorkspaceId: accountWorkspaceId,
+    accountByWorkspace,
+    activeRateLimits: accountWorkspaceRateLimits,
+    refreshAccountInfo,
+    refreshAccountRateLimits,
+    alertError,
+  });
+  const resetUsageWorkspaceId = activeWorkspace ? activeWorkspaceId : homeAccountWorkspaceId;
+  const resetUsageRateLimits = activeWorkspace ? activeRateLimits : homeRateLimits;
+  const handleResetUsageLimit = useCallback(async () => {
+    const workspaceId = resetUsageWorkspaceId;
+    const availableCount = resetUsageRateLimits?.rateLimitResetCredits?.availableCount ?? 0;
+    if (!workspaceId || availableCount <= 0 || resettingUsageLimit) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Use 1 reset credit to reset your Codex usage limit?",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    const idempotencyKey =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    setResettingUsageLimit(true);
+    addDebugEntry({
+      id: `${Date.now()}-client-rate-limit-reset`,
+      timestamp: Date.now(),
+      source: "client",
+      label: "account/rateLimitResetCredit/consume",
+      payload: { workspaceId, idempotencyKey },
+    });
+
+    try {
+      const response = await consumeRateLimitResetCredit(workspaceId, idempotencyKey);
+      addDebugEntry({
+        id: `${Date.now()}-server-rate-limit-reset`,
+        timestamp: Date.now(),
+        source: "server",
+        label: "account/rateLimitResetCredit/consume response",
+        payload: response,
+      });
+      const result =
+        response?.result && typeof response.result === "object"
+          ? response.result
+          : response;
+      const outcome = typeof result?.outcome === "string" ? result.outcome : null;
+      if (outcome === "noCredit") {
+        alertError("No reset credits are available.");
+      } else if (outcome === "nothingToReset") {
+        alertError("There is no active usage limit to reset.");
+      }
+      await refreshAccountRateLimits(workspaceId);
+    } catch (error) {
+      addDebugEntry({
+        id: `${Date.now()}-client-rate-limit-reset-error`,
+        timestamp: Date.now(),
+        source: "error",
+        label: "account/rateLimitResetCredit/consume error",
+        payload: error instanceof Error ? error.message : String(error),
+      });
+      alertError(
+        error instanceof Error
+          ? `Reset failed: ${error.message}`
+          : "Reset failed.",
+      );
+    } finally {
+      setResettingUsageLimit(false);
+    }
+  }, [
+    addDebugEntry,
+    alertError,
+    refreshAccountRateLimits,
+    resetUsageRateLimits?.rateLimitResetCredits?.availableCount,
+    resetUsageWorkspaceId,
+    resettingUsageLimit,
+  ]);
   const activeTokenUsage = activeThreadId
     ? tokenUsageByThread[activeThreadId] ?? null
     : null;
@@ -1697,6 +1702,8 @@ export default function MainApp() {
     approvals,
     activeRateLimits,
     activeAccount,
+    accountWorkspaceId,
+    homeAccountWorkspaceId,
     homeRateLimits,
     homeAccount,
     accountSwitching,
