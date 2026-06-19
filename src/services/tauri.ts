@@ -538,6 +538,18 @@ export async function respondToServerRequest(
   });
 }
 
+export async function respondToMcpElicitationRequest(
+  workspaceId: string,
+  requestId: number | string,
+  action: "accept" | "decline" | "cancel",
+) {
+  return invoke("respond_to_server_request", {
+    workspaceId,
+    requestId,
+    result: { action },
+  });
+}
+
 export async function respondToUserInputRequest(
   workspaceId: string,
   requestId: number | string,

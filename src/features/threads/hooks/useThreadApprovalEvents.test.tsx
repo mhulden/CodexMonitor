@@ -82,4 +82,30 @@ describe("useThreadApprovalEvents", () => {
     expect(respondToServerRequest).not.toHaveBeenCalled();
     expect(dispatch).toHaveBeenCalledWith({ type: "addApproval", approval });
   });
+
+  it("does not auto-accept MCP elicitation requests from command allowlists", () => {
+    const dispatch = vi.fn();
+    const approvalAllowlistRef = {
+      current: { "ws-1": [["browser_navigate"]] },
+    };
+    const approval: ApprovalRequest = {
+      workspace_id: "ws-1",
+      request_id: "mcp-1",
+      method: "mcpServer/elicitation/request",
+      params: { command: "browser_navigate" },
+    };
+
+    const { result } = renderHook(() =>
+      useThreadApprovalEvents({ dispatch, approvalAllowlistRef }),
+    );
+
+    act(() => {
+      result.current(approval);
+    });
+
+    expect(getApprovalCommandInfo).not.toHaveBeenCalled();
+    expect(matchesCommandPrefix).not.toHaveBeenCalled();
+    expect(respondToServerRequest).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith({ type: "addApproval", approval });
+  });
 });

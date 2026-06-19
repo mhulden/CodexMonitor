@@ -38,6 +38,7 @@ import {
   setTraySessionUsage,
   startReview,
   setThreadName,
+  respondToMcpElicitationRequest,
   tailscaleDaemonStart,
   tailscaleDaemonCommandPreview,
   tailscaleDaemonStatus,
@@ -1020,6 +1021,19 @@ describe("tauri invoke wrappers", () => {
       workspaceId: "ws-6",
       requestId: 101,
       result: { decision: "accept" },
+    });
+  });
+
+  it("nests actions for MCP elicitation responses", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await respondToMcpElicitationRequest("ws-6", "mcp-1", "accept");
+
+    expect(invokeMock).toHaveBeenCalledWith("respond_to_server_request", {
+      workspaceId: "ws-6",
+      requestId: "mcp-1",
+      result: { action: "accept" },
     });
   });
 

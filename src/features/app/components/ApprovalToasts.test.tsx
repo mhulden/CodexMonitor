@@ -57,4 +57,38 @@ describe("ApprovalToasts", () => {
     expect(onDecision).not.toHaveBeenCalled();
     document.body.removeChild(input);
   });
+
+  it("renders MCP elicitation prompts without command approval affordances", () => {
+    const onDecision = vi.fn();
+    const onRemember = vi.fn();
+    const mcpRequest: ApprovalRequest = {
+      workspace_id: "workspace-1",
+      request_id: "mcp-1",
+      method: "mcpServer/elicitation/request",
+      params: {
+        server: "playwright",
+        tool: "browser_navigate",
+        command: "browser_navigate",
+      },
+    };
+
+    render(
+      <ApprovalToasts
+        approvals={[mcpRequest]}
+        workspaces={workspaces}
+        onDecision={onDecision}
+        onRemember={onRemember}
+      />,
+    );
+
+    expect(screen.getByText("MCP response needed")).toBeTruthy();
+    expect(screen.getByText("MCP server elicitation")).toBeTruthy();
+    expect(screen.queryByText("Always allow")).toBeNull();
+
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(onDecision).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    expect(onDecision).toHaveBeenCalledWith(mcpRequest, "accept");
+  });
 });

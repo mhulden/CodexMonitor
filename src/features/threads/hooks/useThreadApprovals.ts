@@ -4,8 +4,10 @@ import type { ApprovalRequest, DebugEntry } from "@/types";
 import { normalizeCommandTokens } from "@utils/approvalRules";
 import {
   rememberApprovalRule,
+  respondToMcpElicitationRequest,
   respondToServerRequest,
 } from "@services/tauri";
+import { isMcpElicitationRequestMethod } from "@utils/appServerEvents";
 import type { ThreadAction } from "./useThreadsReducer";
 
 type UseThreadApprovalsOptions = {
@@ -37,11 +39,19 @@ export function useThreadApprovals({ dispatch, onDebug }: UseThreadApprovalsOpti
 
   const handleApprovalDecision = useCallback(
     async (request: ApprovalRequest, decision: "accept" | "decline") => {
-      await respondToServerRequest(
-        request.workspace_id,
-        request.request_id,
-        decision,
-      );
+      if (isMcpElicitationRequestMethod(request.method)) {
+        await respondToMcpElicitationRequest(
+          request.workspace_id,
+          request.request_id,
+          decision,
+        );
+      } else {
+        await respondToServerRequest(
+          request.workspace_id,
+          request.request_id,
+          decision,
+        );
+      }
       dispatch({
         type: "removeApproval",
         requestId: request.request_id,

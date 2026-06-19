@@ -97,6 +97,8 @@ These arrive on the same frontend event stream but are not Codex v2
   `item/permissions/requestApproval`, via suffix match in
   `isApprovalRequestMethod(method)`
 - `item/tool/requestUserInput` (a Codex v2 server request, not a notification)
+- `mcpServer/elicitation/request` (routed as a conservative response-needed
+  prompt; currently supports accept/decline only)
 - `codex/backgroundThread` (CodexMonitor synthetic bridge event)
 - `codex/connected` (CodexMonitor synthetic bridge event)
 - `codex/event/skills_update_available` (handled via
@@ -233,12 +235,12 @@ Supported server requests:
 - `item/fileChange/requestApproval`
 - `item/permissions/requestApproval`
 - `item/tool/requestUserInput`
+- `mcpServer/elicitation/request`
 
 Missing server requests:
 
 - `item/tool/call`
 - `account/chatgptAuthTokens/refresh`
-- `mcpServer/elicitation/request`
 
 ## Where To Look In ../Codex
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import type { ApprovalRequest, WorkspaceInfo } from "../../../types";
 import { getApprovalCommandInfo } from "../../../utils/approvalRules";
+import { isMcpElicitationRequestMethod } from "../../../utils/appServerEvents";
 import {
   ToastActions,
   ToastBody,
@@ -33,6 +34,9 @@ export function ApprovalToasts({
 
   useEffect(() => {
     if (!primaryRequest) {
+      return;
+    }
+    if (isMcpElicitationRequestMethod(primaryRequest.method)) {
       return;
     }
 
@@ -69,6 +73,9 @@ export function ApprovalToasts({
       .trim();
 
   const methodLabel = (method: string) => {
+    if (isMcpElicitationRequestMethod(method)) {
+      return "MCP server elicitation";
+    }
     const trimmed = method.replace(/^codex\/requestApproval\/?/, "");
     return trimmed || method;
   };
@@ -94,7 +101,8 @@ export function ApprovalToasts({
       {approvals.map((request) => {
         const workspaceName = workspaceLabels.get(request.workspace_id);
         const params = request.params ?? {};
-        const commandInfo = getApprovalCommandInfo(params);
+        const isMcpElicitation = isMcpElicitationRequestMethod(request.method);
+        const commandInfo = isMcpElicitation ? null : getApprovalCommandInfo(params);
         const entries = Object.entries(params);
         return (
           <ToastCard
@@ -103,7 +111,9 @@ export function ApprovalToasts({
             role="alert"
           >
             <ToastHeader className="approval-toast-header">
-              <ToastTitle className="approval-toast-title">Approval needed</ToastTitle>
+              <ToastTitle className="approval-toast-title">
+                {isMcpElicitation ? "MCP response needed" : "Approval needed"}
+              </ToastTitle>
               {workspaceName ? (
                 <div className="approval-toast-workspace">{workspaceName}</div>
               ) : null}
@@ -156,7 +166,7 @@ export function ApprovalToasts({
                 className="primary"
                 onClick={() => onDecision(request, "accept")}
               >
-                Approve (Enter)
+                {isMcpElicitation ? "Accept" : "Approve (Enter)"}
               </button>
             </ToastActions>
           </ToastCard>

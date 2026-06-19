@@ -5,6 +5,7 @@ import {
   getApprovalCommandInfo,
   matchesCommandPrefix,
 } from "@utils/approvalRules";
+import { isMcpElicitationRequestMethod } from "@utils/appServerEvents";
 import { respondToServerRequest } from "@services/tauri";
 import type { ThreadAction } from "./useThreadsReducer";
 
@@ -19,6 +20,10 @@ export function useThreadApprovalEvents({
 }: UseThreadApprovalEventsOptions) {
   return useCallback(
     (approval: ApprovalRequest) => {
+      if (isMcpElicitationRequestMethod(approval.method)) {
+        dispatch({ type: "addApproval", approval });
+        return;
+      }
       const commandInfo = getApprovalCommandInfo(approval.params ?? {});
       const allowlist =
         approvalAllowlistRef.current[approval.workspace_id] ?? [];

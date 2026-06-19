@@ -22,6 +22,7 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "item/reasoning/textDelta",
   "item/started",
   "item/tool/requestUserInput",
+  "mcpServer/elicitation/request",
   "thread/archived",
   "thread/closed",
   "thread/name/updated",
@@ -102,6 +103,10 @@ export function getAppServerRequestId(event: AppServerEvent): string | number | 
 
 export function isApprovalRequestMethod(method: string): boolean {
   return method.endsWith("requestApproval");
+}
+
+export function isMcpElicitationRequestMethod(method: string): boolean {
+  return method === "mcpServer/elicitation/request";
 }
 
 export function isSkillsUpdateAvailableEvent(event: AppServerEvent): boolean {

@@ -9,6 +9,7 @@ import {
   getAppServerRequestId,
   isApprovalRequestMethod,
   isAppListUpdatedEvent,
+  isMcpElicitationRequestMethod,
   isSkillsUpdateAvailableEvent,
   isSupportedAppServerMethod,
 } from "./appServerEvents";
@@ -40,6 +41,8 @@ describe("appServerEvents", () => {
     expect(isApprovalRequestMethod("item/permissions/requestApproval")).toBe(true);
     expect(isApprovalRequestMethod("workspace/requestApproval")).toBe(true);
     expect(isApprovalRequestMethod("workspace/request")).toBe(false);
+    expect(isMcpElicitationRequestMethod("mcpServer/elicitation/request")).toBe(true);
+    expect(isMcpElicitationRequestMethod("item/tool/requestUserInput")).toBe(false);
   });
 
   it("matches canonical skills update event method only", () => {

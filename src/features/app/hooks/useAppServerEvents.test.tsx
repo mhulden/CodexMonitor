@@ -274,6 +274,23 @@ describe("useAppServerEvents", () => {
       listener?.({
         workspace_id: "ws-1",
         message: {
+          method: "mcpServer/elicitation/request",
+          id: "mcp-1",
+          params: { server: "playwright", tool: "browser_navigate" },
+        },
+      });
+    });
+    expect(handlers.onApprovalRequest).toHaveBeenCalledWith({
+      workspace_id: "ws-1",
+      request_id: "mcp-1",
+      method: "mcpServer/elicitation/request",
+      params: { server: "playwright", tool: "browser_navigate" },
+    });
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
           method: "item/tool/requestUserInput",
           id: 11,
           params: {

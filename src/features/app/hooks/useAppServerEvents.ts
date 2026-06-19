@@ -10,6 +10,7 @@ import {
   getAppServerRawMethod,
   getAppServerRequestId,
   isApprovalRequestMethod,
+  isMcpElicitationRequestMethod,
   isSupportedAppServerMethod,
 } from "../../../utils/appServerEvents";
 import type { SupportedAppServerMethod } from "../../../utils/appServerEvents";
@@ -127,6 +128,7 @@ export const METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS = [
   "item/reasoning/textDelta",
   "item/started",
   "item/tool/requestUserInput",
+  "mcpServer/elicitation/request",
   "thread/archived",
   "thread/closed",
   "thread/name/updated",
@@ -194,7 +196,11 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       const requestId = getAppServerRequestId(payload);
       const hasRequestId = requestId !== null;
 
-      if (isApprovalRequestMethod(method) && hasRequestId) {
+      if (
+        (isApprovalRequestMethod(method) ||
+          isMcpElicitationRequestMethod(method)) &&
+        hasRequestId
+      ) {
         currentHandlers.onApprovalRequest?.({
           workspace_id,
           request_id: requestId as string | number,
