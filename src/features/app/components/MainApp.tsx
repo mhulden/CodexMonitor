@@ -81,7 +81,7 @@ import {
 import { useAppShellOrchestration } from "@app/orchestration/useLayoutOrchestration";
 import { normalizeCodexArgsInput } from "@/utils/codexArgsInput";
 import { subscribeTrayOpenThread } from "@services/events";
-import { consumeRateLimitResetCredit } from "@services/tauri";
+import { consumeRateLimitResetCredit, restartWorkspaceSession } from "@services/tauri";
 
 const SettingsView = lazy(() =>
   import("@settings/components/SettingsView").then((module) => ({
@@ -1174,6 +1174,61 @@ export default function MainApp() {
     resetUsageWorkspaceId,
     resettingUsageLimit,
   ]);
+  const handleRestartWorkspaceSession = useCallback(
+    async (workspace: WorkspaceInfo) => {
+      const confirmed = window.confirm(
+        `Restart the Codex session for ${workspace.name}? Active turns in this session will stop.`,
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      addDebugEntry({
+        id: `${Date.now()}-client-restart-workspace-session`,
+        timestamp: Date.now(),
+        source: "client",
+        label: "workspace/session restart",
+        payload: { workspaceId: workspace.id },
+      });
+
+      try {
+        const affectedIds = await restartWorkspaceSession(workspace.id);
+        const workspaceIds = affectedIds.length ? affectedIds : [workspace.id];
+        const affectedWorkspaces = workspaceIds
+          .map((id) => workspacesById.get(id))
+          .filter((entry): entry is WorkspaceInfo => Boolean(entry));
+
+        await Promise.all([
+          ...affectedWorkspaces.map((entry) => listThreadsForWorkspace(entry)),
+          ...workspaceIds.flatMap((workspaceId) => [
+            refreshAccountInfo(workspaceId),
+            refreshAccountRateLimits(workspaceId),
+          ]),
+        ]);
+      } catch (error) {
+        addDebugEntry({
+          id: `${Date.now()}-client-restart-workspace-session-error`,
+          timestamp: Date.now(),
+          source: "error",
+          label: "workspace/session restart error",
+          payload: error instanceof Error ? error.message : String(error),
+        });
+        alertError(
+          error instanceof Error
+            ? `Restart Codex session failed: ${error.message}`
+            : "Restart Codex session failed.",
+        );
+      }
+    },
+    [
+      addDebugEntry,
+      alertError,
+      listThreadsForWorkspace,
+      refreshAccountInfo,
+      refreshAccountRateLimits,
+      workspacesById,
+    ],
+  );
   const activeTokenUsage = activeThreadId
     ? tokenUsageByThread[activeThreadId] ?? null
     : null;
@@ -1534,6 +1589,7 @@ export default function MainApp() {
       removeWorktree,
       loadOlderThreadsForWorkspace,
       listThreadsForWorkspace,
+      restartWorkspaceSession: handleRestartWorkspaceSession,
     },
     workspaceCycling: {
       workspaces,

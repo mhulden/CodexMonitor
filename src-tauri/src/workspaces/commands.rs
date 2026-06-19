@@ -616,6 +616,36 @@ pub(crate) async fn connect_workspace(
 }
 
 #[tauri::command]
+pub(crate) async fn restart_workspace_session(
+    id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Vec<String>, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        let request = workspace_rpc::IdRequest { id };
+        let response = remote_backend::call_remote(
+            &*state,
+            app,
+            "restart_workspace_session",
+            workspace_remote_params(&request)?,
+        )
+        .await?;
+        return serde_json::from_value(response).map_err(|err| err.to_string());
+    }
+
+    workspaces_core::restart_workspace_session_core(
+        id,
+        &state.workspaces,
+        &state.sessions,
+        &state.app_settings,
+        |entry, default_bin, codex_args, codex_home| {
+            spawn_with_app(&app, entry, default_bin, codex_args, codex_home)
+        },
+    )
+    .await
+}
+
+#[tauri::command]
 pub(crate) async fn list_workspace_files(
     workspace_id: String,
     state: State<'_, AppState>,

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::path::PathBuf;
-use std::sync::OnceLock;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
 use tokio::sync::Mutex;
 
@@ -99,6 +99,104 @@ where
     Ok(())
 }
 
+pub(crate) async fn restart_workspace_session_core<F, Fut>(
+    workspace_id: String,
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    app_settings: &Mutex<AppSettings>,
+    spawn_session: F,
+) -> Result<Vec<String>, String>
+where
+    F: Fn(WorkspaceEntry, Option<String>, Option<String>, Option<PathBuf>) -> Fut,
+    Fut: Future<Output = Result<Arc<WorkspaceSession>, String>>,
+{
+    let _ = resolve_entry_and_parent(workspaces, &workspace_id).await?;
+    let _spawn_guard = workspace_session_spawn_lock().lock().await;
+
+    let current_session = {
+        let sessions = sessions.lock().await;
+        sessions.get(&workspace_id).cloned()
+    };
+
+    let (spawn_entry_id, affected_ids, old_session) = if let Some(current_session) = current_session
+    {
+        let owner_workspace_id = current_session.owner_workspace_id.clone();
+        let affected_ids = {
+            let sessions = sessions.lock().await;
+            sessions
+                .iter()
+                .filter_map(|(id, session)| {
+                    if Arc::ptr_eq(session, &current_session) {
+                        Some(id.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+        };
+        let spawn_entry_id = if affected_ids.iter().any(|id| id == &owner_workspace_id) {
+            owner_workspace_id
+        } else {
+            workspace_id.clone()
+        };
+        (spawn_entry_id, affected_ids, Some(current_session))
+    } else {
+        (workspace_id.clone(), vec![workspace_id.clone()], None)
+    };
+
+    let (spawn_entry, parent_entry, affected_entries) = {
+        let workspaces = workspaces.lock().await;
+        let spawn_entry = workspaces
+            .get(&spawn_entry_id)
+            .cloned()
+            .or_else(|| workspaces.get(&workspace_id).cloned())
+            .ok_or_else(|| "workspace not found".to_string())?;
+        let parent_entry = spawn_entry
+            .parent_id
+            .as_ref()
+            .and_then(|parent_id| workspaces.get(parent_id))
+            .cloned();
+        let affected_entries = affected_ids
+            .iter()
+            .filter_map(|id| workspaces.get(id).cloned())
+            .collect::<Vec<_>>();
+        (spawn_entry, parent_entry, affected_entries)
+    };
+
+    let (default_bin, codex_args) = {
+        let settings = app_settings.lock().await;
+        (
+            settings.codex_bin.clone(),
+            resolve_workspace_codex_args(&spawn_entry, parent_entry.as_ref(), Some(&settings)),
+        )
+    };
+    let codex_home = resolve_workspace_codex_home(&spawn_entry, parent_entry.as_ref());
+    let new_session = spawn_session(spawn_entry, default_bin, codex_args, codex_home).await?;
+
+    for entry in &affected_entries {
+        new_session
+            .register_workspace_with_path(&entry.id, Some(&entry.path))
+            .await;
+    }
+
+    {
+        let mut sessions = sessions.lock().await;
+        if let Some(old_session) = old_session.as_ref() {
+            sessions.retain(|_, session| !Arc::ptr_eq(session, old_session));
+        }
+        for entry in &affected_entries {
+            sessions.insert(entry.id.clone(), Arc::clone(&new_session));
+        }
+    }
+
+    if let Some(old_session) = old_session {
+        let mut child = old_session.child.lock().await;
+        kill_child_process_tree(&mut child).await;
+    }
+
+    Ok(affected_entries.into_iter().map(|entry| entry.id).collect())
+}
+
 pub(super) async fn kill_session_by_id(
     sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
     id: &str,
@@ -149,7 +247,14 @@ mod tests {
         }
     }
 
-    fn make_session(_entry: WorkspaceEntry) -> Arc<WorkspaceSession> {
+    fn make_session(entry: WorkspaceEntry) -> Arc<WorkspaceSession> {
+        make_session_with_owner(entry.clone(), &entry.id)
+    }
+
+    fn make_session_with_owner(
+        _entry: WorkspaceEntry,
+        owner_workspace_id: &str,
+    ) -> Arc<WorkspaceSession> {
         let mut cmd = if cfg!(windows) {
             let mut cmd = Command::new("cmd");
             cmd.args(["/C", "more"]);
@@ -177,8 +282,8 @@ mod tests {
             hidden_thread_ids: Mutex::new(HashSet::new()),
             next_id: AtomicU64::new(0),
             background_thread_callbacks: Mutex::new(HashMap::new()),
-            owner_workspace_id: "test-owner".to_string(),
-            workspace_ids: Mutex::new(HashSet::from(["test-owner".to_string()])),
+            owner_workspace_id: owner_workspace_id.to_string(),
+            workspace_ids: Mutex::new(HashSet::from([owner_workspace_id.to_string()])),
             workspace_roots: Mutex::new(HashMap::new()),
         })
     }
@@ -248,6 +353,99 @@ mod tests {
             assert_eq!(spawn_calls.load(Ordering::SeqCst), 1);
             assert!(sessions.lock().await.contains_key(&entry.id));
             kill_session_by_id(&sessions, &entry.id).await;
+        });
+    }
+
+    #[test]
+    fn restart_workspace_session_spawns_when_not_connected() {
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let entry = make_workspace_entry("ws-restart");
+            let workspaces = Mutex::new(HashMap::from([(entry.id.clone(), entry.clone())]));
+            let sessions = Mutex::new(HashMap::<String, Arc<WorkspaceSession>>::new());
+            let app_settings = Mutex::new(AppSettings::default());
+            let spawn_calls = Arc::new(AtomicUsize::new(0));
+            let spawn_calls_ref = spawn_calls.clone();
+            let entry_for_spawn = entry.clone();
+
+            let restarted = restart_workspace_session_core(
+                entry.id.clone(),
+                &workspaces,
+                &sessions,
+                &app_settings,
+                move |_entry, _default_bin, _codex_args, _codex_home| {
+                    let spawn_calls_ref = spawn_calls_ref.clone();
+                    let entry_for_spawn = entry_for_spawn.clone();
+                    async move {
+                        spawn_calls_ref.fetch_add(1, Ordering::SeqCst);
+                        Ok(make_session(entry_for_spawn))
+                    }
+                },
+            )
+            .await
+            .expect("restart should spawn");
+
+            assert_eq!(restarted, vec![entry.id.clone()]);
+            assert_eq!(spawn_calls.load(Ordering::SeqCst), 1);
+            assert!(sessions.lock().await.contains_key(&entry.id));
+            kill_session_by_id(&sessions, &entry.id).await;
+        });
+    }
+
+    #[test]
+    fn restart_workspace_session_replaces_only_shared_session_group() {
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let entry_a = make_workspace_entry("ws-a");
+            let entry_b = make_workspace_entry("ws-b");
+            let entry_c = make_workspace_entry("ws-c");
+            let workspaces = Mutex::new(HashMap::from([
+                (entry_a.id.clone(), entry_a.clone()),
+                (entry_b.id.clone(), entry_b.clone()),
+                (entry_c.id.clone(), entry_c.clone()),
+            ]));
+            let shared_session = make_session_with_owner(entry_a.clone(), &entry_a.id);
+            shared_session
+                .register_workspace_with_path(&entry_b.id, Some(&entry_b.path))
+                .await;
+            let unrelated_session = make_session_with_owner(entry_c.clone(), &entry_c.id);
+            let sessions = Mutex::new(HashMap::from([
+                (entry_a.id.clone(), Arc::clone(&shared_session)),
+                (entry_b.id.clone(), Arc::clone(&shared_session)),
+                (entry_c.id.clone(), Arc::clone(&unrelated_session)),
+            ]));
+            let app_settings = Mutex::new(AppSettings::default());
+            let spawn_calls = Arc::new(AtomicUsize::new(0));
+            let spawn_calls_ref = spawn_calls.clone();
+            let entry_for_spawn = entry_a.clone();
+
+            let restarted = restart_workspace_session_core(
+                entry_b.id.clone(),
+                &workspaces,
+                &sessions,
+                &app_settings,
+                move |_entry, _default_bin, _codex_args, _codex_home| {
+                    let spawn_calls_ref = spawn_calls_ref.clone();
+                    let entry_for_spawn = entry_for_spawn.clone();
+                    async move {
+                        spawn_calls_ref.fetch_add(1, Ordering::SeqCst);
+                        Ok(make_session_with_owner(entry_for_spawn, "ws-a"))
+                    }
+                },
+            )
+            .await
+            .expect("restart should replace shared session");
+
+            assert_eq!(spawn_calls.load(Ordering::SeqCst), 1);
+            assert_eq!(restarted.len(), 2);
+            assert!(restarted.contains(&entry_a.id));
+            assert!(restarted.contains(&entry_b.id));
+
+            let sessions = sessions.lock().await;
+            let next_a = sessions.get(&entry_a.id).expect("ws-a session");
+            let next_b = sessions.get(&entry_b.id).expect("ws-b session");
+            let next_c = sessions.get(&entry_c.id).expect("ws-c session");
+            assert!(Arc::ptr_eq(next_a, next_b));
+            assert!(!Arc::ptr_eq(next_a, &shared_session));
+            assert!(Arc::ptr_eq(next_c, &unrelated_session));
         });
     }
 }

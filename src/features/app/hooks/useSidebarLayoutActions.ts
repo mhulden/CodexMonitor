@@ -30,6 +30,7 @@ type UseSidebarLayoutActionsOptions = {
   removeWorktree: (workspaceId: string) => void | Promise<unknown>;
   loadOlderThreadsForWorkspace: (workspace: WorkspaceInfo) => void | Promise<unknown>;
   listThreadsForWorkspace: (workspace: WorkspaceInfo) => void | Promise<unknown>;
+  restartWorkspaceSession: (workspace: WorkspaceInfo) => void | Promise<unknown>;
 };
 
 export function useSidebarLayoutActions({
@@ -55,6 +56,7 @@ export function useSidebarLayoutActions({
   removeWorktree,
   loadOlderThreadsForWorkspace,
   listThreadsForWorkspace,
+  restartWorkspaceSession,
 }: UseSidebarLayoutActionsOptions) {
   const onOpenSettings = useCallback(() => {
     openSettings();
@@ -182,6 +184,17 @@ export function useSidebarLayoutActions({
     [listThreadsForWorkspace, workspacesById],
   );
 
+  const onRestartWorkspaceSession = useCallback(
+    (workspaceId: string) => {
+      const workspace = workspacesById.get(workspaceId);
+      if (!workspace) {
+        return;
+      }
+      void restartWorkspaceSession(workspace);
+    },
+    [restartWorkspaceSession, workspacesById],
+  );
+
   return {
     onOpenSettings,
     onSelectHome,
@@ -196,5 +209,6 @@ export function useSidebarLayoutActions({
     onDeleteWorktree,
     onLoadOlderThreads,
     onReloadWorkspaceThreads,
+    onRestartWorkspaceSession,
   };
 }

@@ -39,6 +39,7 @@ import {
   startReview,
   setThreadName,
   respondToMcpElicitationRequest,
+  restartWorkspaceSession,
   tailscaleDaemonStart,
   tailscaleDaemonCommandPreview,
   tailscaleDaemonStatus,
@@ -100,6 +101,17 @@ describe("tauri invoke wrappers", () => {
 
     expect(invokeMock).toHaveBeenCalledWith("add_workspace", {
       path: "/tmp/project",
+    });
+  });
+
+  it("uses id-only payload for restartWorkspaceSession", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce(["ws-1"]);
+
+    await expect(restartWorkspaceSession("ws-1")).resolves.toEqual(["ws-1"]);
+
+    expect(invokeMock).toHaveBeenCalledWith("restart_workspace_session", {
+      id: "ws-1",
     });
   });
 

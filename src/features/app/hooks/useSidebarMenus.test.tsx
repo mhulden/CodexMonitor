@@ -51,6 +51,7 @@ describe("useSidebarMenus", () => {
     const isThreadPinned = vi.fn(() => false);
     const onRenameThread = vi.fn();
     const onReloadWorkspaceThreads = vi.fn();
+    const onRestartWorkspaceSession = vi.fn();
     const onDeleteWorkspace = vi.fn();
     const onDeleteWorktree = vi.fn();
 
@@ -63,6 +64,7 @@ describe("useSidebarMenus", () => {
         isThreadPinned,
         onRenameThread,
         onReloadWorkspaceThreads,
+        onRestartWorkspaceSession,
         onDeleteWorkspace,
         onDeleteWorktree,
       }),
@@ -98,5 +100,12 @@ describe("useSidebarMenus", () => {
     expect(revealItem).toBeDefined();
     await revealItem.action();
     expect(revealItemInDir).toHaveBeenCalledWith("/tmp/worktree-1");
+
+    const restartItem = menuArgs.items.find(
+      (item: { text: string }) => item.text === "Restart Codex session",
+    );
+    expect(restartItem).toBeDefined();
+    restartItem.action();
+    expect(onRestartWorkspaceSession).toHaveBeenCalledWith("worktree-1");
   });
 });

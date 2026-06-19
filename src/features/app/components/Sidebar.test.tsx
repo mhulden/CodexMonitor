@@ -68,6 +68,7 @@ const baseProps = {
   onDeleteWorktree: vi.fn(),
   onLoadOlderThreads: vi.fn(),
   onReloadWorkspaceThreads: vi.fn(),
+  onRestartWorkspaceSession: vi.fn(),
   workspaceDropTargetRef: createRef<HTMLElement>(),
   isWorkspaceDropActive: false,
   workspaceDropText: "Drop Project Here",

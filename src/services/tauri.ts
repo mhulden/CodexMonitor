@@ -328,6 +328,10 @@ export async function removeWorkspace(id: string): Promise<void> {
   return invoke("remove_workspace", { id });
 }
 
+export async function restartWorkspaceSession(id: string): Promise<string[]> {
+  return invoke<string[]>("restart_workspace_session", { id });
+}
+
 export async function removeWorktree(id: string): Promise<void> {
   return invoke("remove_worktree", { id });
 }

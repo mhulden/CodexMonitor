@@ -230,6 +230,7 @@ pub fn run() {
             codex::set_thread_name,
             codex::collaboration_mode_list,
             workspaces::connect_workspace,
+            workspaces::restart_workspace_session,
             git::get_git_status,
             git::init_git_repo,
             git::create_github_repo,

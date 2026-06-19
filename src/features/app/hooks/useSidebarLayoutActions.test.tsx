@@ -38,6 +38,7 @@ describe("useSidebarLayoutActions", () => {
       removeWorktree: vi.fn(async () => {}),
       loadOlderThreadsForWorkspace: vi.fn(async () => {}),
       listThreadsForWorkspace: vi.fn(async () => {}),
+      restartWorkspaceSession: vi.fn(async () => {}),
     } as const;
 
     const { result, rerender } = renderHook(
@@ -95,6 +96,7 @@ describe("useSidebarLayoutActions", () => {
         removeWorktree: vi.fn(async () => {}),
         loadOlderThreadsForWorkspace: vi.fn(async () => {}),
         listThreadsForWorkspace: vi.fn(async () => {}),
+        restartWorkspaceSession: vi.fn(async () => {}),
       }),
     );
 
@@ -136,6 +138,7 @@ describe("useSidebarLayoutActions", () => {
         removeWorktree: vi.fn(async () => {}),
         loadOlderThreadsForWorkspace: vi.fn(async () => {}),
         listThreadsForWorkspace: vi.fn(async () => {}),
+        restartWorkspaceSession: vi.fn(async () => {}),
       }),
     );
 
@@ -145,5 +148,42 @@ describe("useSidebarLayoutActions", () => {
 
     expect(connectWorkspace).toHaveBeenCalledWith(workspace);
     expect(setActiveTab).toHaveBeenCalledWith("codex");
+  });
+
+  it("restarts a workspace session from a workspace id", () => {
+    const restartWorkspaceSession = vi.fn(async () => {});
+    const { result } = renderHook(() =>
+      useSidebarLayoutActions({
+        openSettings: vi.fn(),
+        resetPullRequestSelection: vi.fn(),
+        clearDraftState: vi.fn(),
+        clearDraftStateIfDifferentWorkspace: vi.fn(),
+        selectHome: vi.fn(),
+        exitDiffView: vi.fn(),
+        selectWorkspace: vi.fn(),
+        setActiveThreadId: vi.fn(),
+        connectWorkspace: vi.fn(async () => {}),
+        isCompact: false,
+        setActiveTab: vi.fn(),
+        workspacesById: new Map([[workspace.id, workspace]]),
+        updateWorkspaceSettings: vi.fn(async () => workspace),
+        removeThread: vi.fn(),
+        clearDraftForThread: vi.fn(),
+        removeImagesForThread: vi.fn(),
+        refreshThread: vi.fn(async () => {}),
+        handleRenameThread: vi.fn(),
+        removeWorkspace: vi.fn(async () => {}),
+        removeWorktree: vi.fn(async () => {}),
+        loadOlderThreadsForWorkspace: vi.fn(async () => {}),
+        listThreadsForWorkspace: vi.fn(async () => {}),
+        restartWorkspaceSession,
+      }),
+    );
+
+    act(() => {
+      result.current.onRestartWorkspaceSession("ws-1");
+    });
+
+    expect(restartWorkspaceSession).toHaveBeenCalledWith(workspace);
   });
 });

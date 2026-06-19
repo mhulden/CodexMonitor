@@ -554,6 +554,31 @@ impl DaemonState {
         .await
     }
 
+    async fn restart_workspace_session(
+        &self,
+        id: String,
+        client_version: String,
+    ) -> Result<Vec<String>, String> {
+        let client_version = client_version.clone();
+        workspaces_core::restart_workspace_session_core(
+            id,
+            &self.workspaces,
+            &self.sessions,
+            &self.app_settings,
+            move |entry, default_bin, codex_args, codex_home| {
+                spawn_with_client(
+                    self.event_sink.clone(),
+                    client_version.clone(),
+                    entry,
+                    default_bin,
+                    codex_args,
+                    codex_home,
+                )
+            },
+        )
+        .await
+    }
+
     async fn set_workspace_runtime_codex_args(
         &self,
         workspace_id: String,

@@ -15,6 +15,7 @@ type SidebarMenuHandlers = {
   isThreadPinned: (workspaceId: string, threadId: string) => boolean;
   onRenameThread: (workspaceId: string, threadId: string) => void;
   onReloadWorkspaceThreads: (workspaceId: string) => void;
+  onRestartWorkspaceSession: (workspaceId: string) => void;
   onDeleteWorkspace: (workspaceId: string) => void;
   onDeleteWorktree: (workspaceId: string) => void;
 };
@@ -27,6 +28,7 @@ export function useSidebarMenus({
   isThreadPinned,
   onRenameThread,
   onReloadWorkspaceThreads,
+  onRestartWorkspaceSession,
   onDeleteWorkspace,
   onDeleteWorktree,
 }: SidebarMenuHandlers) {
@@ -101,16 +103,20 @@ export function useSidebarMenus({
         text: "Reload threads",
         action: () => onReloadWorkspaceThreads(workspaceId),
       });
+      const restartSessionItem = await MenuItem.new({
+        text: "Restart Codex session",
+        action: () => onRestartWorkspaceSession(workspaceId),
+      });
       const deleteItem = await MenuItem.new({
         text: "Delete",
         action: () => onDeleteWorkspace(workspaceId),
       });
-      const menu = await Menu.new({ items: [reloadItem, deleteItem] });
+      const menu = await Menu.new({ items: [reloadItem, restartSessionItem, deleteItem] });
       const window = getCurrentWindow();
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [onReloadWorkspaceThreads, onDeleteWorkspace],
+    [onReloadWorkspaceThreads, onRestartWorkspaceSession, onDeleteWorkspace],
   );
 
   const showWorktreeMenu = useCallback(
@@ -121,6 +127,10 @@ export function useSidebarMenus({
       const reloadItem = await MenuItem.new({
         text: "Reload threads",
         action: () => onReloadWorkspaceThreads(worktree.id),
+      });
+      const restartSessionItem = await MenuItem.new({
+        text: "Restart Codex session",
+        action: () => onRestartWorkspaceSession(worktree.id),
       });
       const revealItem = await MenuItem.new({
         text: `Show in ${fileManagerLabel}`,
@@ -151,12 +161,14 @@ export function useSidebarMenus({
         text: "Delete worktree",
         action: () => onDeleteWorktree(worktree.id),
       });
-      const menu = await Menu.new({ items: [reloadItem, revealItem, deleteItem] });
+      const menu = await Menu.new({
+        items: [reloadItem, restartSessionItem, revealItem, deleteItem],
+      });
       const window = getCurrentWindow();
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [onReloadWorkspaceThreads, onDeleteWorktree],
+    [onReloadWorkspaceThreads, onRestartWorkspaceSession, onDeleteWorktree],
   );
 
   const showCloneMenu = useCallback(
@@ -167,6 +179,10 @@ export function useSidebarMenus({
       const reloadItem = await MenuItem.new({
         text: "Reload threads",
         action: () => onReloadWorkspaceThreads(clone.id),
+      });
+      const restartSessionItem = await MenuItem.new({
+        text: "Restart Codex session",
+        action: () => onRestartWorkspaceSession(clone.id),
       });
       const revealItem = await MenuItem.new({
         text: `Show in ${fileManagerLabel}`,
@@ -197,12 +213,14 @@ export function useSidebarMenus({
         text: "Delete clone",
         action: () => onDeleteWorkspace(clone.id),
       });
-      const menu = await Menu.new({ items: [reloadItem, revealItem, deleteItem] });
+      const menu = await Menu.new({
+        items: [reloadItem, restartSessionItem, revealItem, deleteItem],
+      });
       const window = getCurrentWindow();
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [onReloadWorkspaceThreads, onDeleteWorkspace],
+    [onReloadWorkspaceThreads, onRestartWorkspaceSession, onDeleteWorkspace],
   );
 
   return { showThreadMenu, showWorkspaceMenu, showWorktreeMenu, showCloneMenu };

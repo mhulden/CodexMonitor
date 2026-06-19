@@ -457,6 +457,7 @@ function buildPrimarySurface({
       onDeleteWorktree: sidebarHandlers.onDeleteWorktree,
       onLoadOlderThreads: sidebarHandlers.onLoadOlderThreads,
       onReloadWorkspaceThreads: sidebarHandlers.onReloadWorkspaceThreads,
+      onRestartWorkspaceSession: sidebarHandlers.onRestartWorkspaceSession,
       workspaceDropTargetRef: workspaceDrop.workspaceDropTargetRef,
       isWorkspaceDropActive: workspaceDrop.isWorkspaceDropActive,
       workspaceDropText: workspaceDrop.workspaceDropText,
