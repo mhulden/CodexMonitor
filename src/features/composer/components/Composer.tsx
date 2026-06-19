@@ -14,6 +14,7 @@ import type {
   CustomPromptOption,
   DictationTranscript,
   FollowUpMessageBehavior,
+  ModelOption,
   QueuedMessage,
   ServiceTier,
   ThreadTokenUsage,
@@ -63,13 +64,14 @@ type ComposerProps = {
   collaborationModes: { id: string; label: string }[];
   selectedCollaborationModeId: string | null;
   onSelectCollaborationMode: (id: string | null) => void;
-  models: { id: string; displayName: string; model: string }[];
+  models: ModelOption[];
   selectedModelId: string | null;
   onSelectModel: (id: string) => void;
   reasoningOptions: string[];
   selectedEffort: string | null;
   onSelectEffort: (effort: string) => void;
   selectedServiceTier: ServiceTier | null;
+  onSelectServiceTier: (tier: ServiceTier | null) => void;
   reasoningSupported: boolean;
   codexArgsOptions?: CodexArgsOption[];
   selectedCodexArgsOverride?: string | null;
@@ -179,6 +181,7 @@ export const Composer = memo(function Composer({
   selectedEffort,
   onSelectEffort,
   selectedServiceTier,
+  onSelectServiceTier,
   reasoningSupported,
   codexArgsOptions = [],
   selectedCodexArgsOverride = null,
@@ -686,6 +689,7 @@ export const Composer = memo(function Composer({
         selectedEffort={selectedEffort}
         onSelectEffort={onSelectEffort}
         selectedServiceTier={selectedServiceTier}
+        onSelectServiceTier={onSelectServiceTier}
         reasoningSupported={reasoningSupported}
         codexArgsOptions={codexArgsOptions}
         selectedCodexArgsOverride={selectedCodexArgsOverride}

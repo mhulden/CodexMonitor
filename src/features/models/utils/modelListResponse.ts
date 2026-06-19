@@ -72,6 +72,46 @@ function parseReasoningEfforts(item: Record<string, unknown>): ModelOption["supp
   return [];
 }
 
+function parseServiceTiers(item: Record<string, unknown>): ModelOption["serviceTiers"] {
+  const tiers = item.serviceTiers ?? item.service_tiers;
+  if (Array.isArray(tiers)) {
+    return tiers
+      .map((tier) => {
+        if (!tier || typeof tier !== "object") {
+          return null;
+        }
+        const entry = tier as Record<string, unknown>;
+        const id = String(entry.id ?? "").trim();
+        if (!id) {
+          return null;
+        }
+        const rawName = String(entry.name ?? "").trim();
+        return {
+          id,
+          name: rawName || id,
+          description: String(entry.description ?? ""),
+        };
+      })
+      .filter((tier): tier is { id: string; name: string; description: string } =>
+        tier !== null,
+      );
+  }
+
+  const speedTiers = item.additionalSpeedTiers ?? item.additional_speed_tiers;
+  if (Array.isArray(speedTiers)) {
+    return speedTiers
+      .map((tier) => String(tier ?? "").trim())
+      .filter((id) => id.length > 0)
+      .map((id) => ({
+        id,
+        name: id,
+        description: "",
+      }));
+  }
+
+  return [];
+}
+
 export function parseModelListResponse(response: unknown): ModelOption[] {
   const items = extractModelItems(response);
 
@@ -84,7 +124,7 @@ export function parseModelListResponse(response: unknown): ModelOption[] {
       const modelSlug = String(record.model ?? record.id ?? "");
       const rawDisplayName = String(record.displayName || record.display_name || "");
       const displayName = rawDisplayName.trim().length > 0 ? rawDisplayName : modelSlug;
-      return {
+      const model: ModelOption = {
         id: String(record.id ?? record.model ?? ""),
         model: modelSlug,
         displayName,
@@ -93,8 +133,13 @@ export function parseModelListResponse(response: unknown): ModelOption[] {
         defaultReasoningEffort: normalizeEffortValue(
           record.defaultReasoningEffort ?? record.default_reasoning_effort,
         ),
+        serviceTiers: parseServiceTiers(record),
+        defaultServiceTier: normalizeEffortValue(
+          record.defaultServiceTier ?? record.default_service_tier,
+        ),
         isDefault: Boolean(record.isDefault ?? record.is_default ?? false),
-      } satisfies ModelOption;
+      };
+      return model;
     })
     .filter((model): model is ModelOption => model !== null);
 }

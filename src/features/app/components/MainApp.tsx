@@ -7,6 +7,7 @@ import { usePullRequestComposer } from "@/features/git/hooks/usePullRequestCompo
 import { useAutoExitEmptyDiff } from "@/features/git/hooks/useAutoExitEmptyDiff";
 import { isMissingRepo } from "@/features/git/utils/repoErrors";
 import { useModels } from "@/features/models/hooks/useModels";
+import { modelSupportsFastServiceTier } from "@/features/models/utils/serviceTiers";
 import { useCollaborationModes } from "@/features/collaboration/hooks/useCollaborationModes";
 import { useCollaborationModeSelection } from "@/features/collaboration/hooks/useCollaborationModeSelection";
 import { useSkills } from "@/features/skills/hooks/useSkills";
@@ -342,6 +343,15 @@ export default function MainApp() {
     setSelectedCodexArgsOverride,
     persistThreadCodexParams,
   });
+  useEffect(() => {
+    if (
+      selectedServiceTier === "fast" &&
+      selectedModel &&
+      !modelSupportsFastServiceTier(selectedModel)
+    ) {
+      handleSelectServiceTier(null);
+    }
+  }, [handleSelectServiceTier, selectedModel, selectedServiceTier]);
   const commitMessageModelId = useMemo(
     () => effectiveCommitMessageModelId(models, appSettings.commitMessageModelId),
     [models, appSettings.commitMessageModelId],
@@ -1737,6 +1747,7 @@ export default function MainApp() {
     onUsageWorkspaceChange: setUsageWorkspaceId,
     gitState,
     selectedServiceTier: selectedServiceTier ?? null,
+    onSelectServiceTier: handleSelectServiceTier,
     composerWorkspaceState,
     promptActions,
     worktreeState,

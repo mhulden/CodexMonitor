@@ -671,6 +671,8 @@ export type ModelOption = {
   description: string;
   supportedReasoningEfforts: { reasoningEffort: string; description: string }[];
   defaultReasoningEffort: string | null;
+  serviceTiers?: { id: string; name: string; description: string }[];
+  defaultServiceTier?: string | null;
   isDefault: boolean;
 };
 

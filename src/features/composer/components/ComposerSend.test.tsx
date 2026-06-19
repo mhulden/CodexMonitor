@@ -9,6 +9,8 @@ import type {
   AppMention,
   ComposerSendIntent,
   FollowUpMessageBehavior,
+  ModelOption,
+  ServiceTier,
 } from "../../../types";
 
 vi.mock("../../../services/dragDrop", () => ({
@@ -29,6 +31,18 @@ vi.mock("../../../utils/platformPaths", async () => {
   };
 });
 
+function modelOption(model: string, displayName = model): ModelOption {
+  return {
+    id: model,
+    model,
+    displayName,
+    description: "",
+    supportedReasoningEfforts: [],
+    defaultReasoningEffort: null,
+    isDefault: false,
+  };
+}
+
 type HarnessProps = {
   onSend: (
     text: string,
@@ -40,7 +54,13 @@ type HarnessProps = {
   isProcessing?: boolean;
   followUpMessageBehavior?: FollowUpMessageBehavior;
   steerAvailable?: boolean;
-  selectedServiceTier?: "fast" | "flex" | null;
+  models?: ModelOption[];
+  selectedModelId?: string | null;
+  reasoningOptions?: string[];
+  selectedEffort?: string | null;
+  reasoningSupported?: boolean;
+  selectedServiceTier?: ServiceTier | null;
+  onSelectServiceTier?: (tier: ServiceTier | null) => void;
 };
 
 function ComposerHarness({
@@ -49,7 +69,13 @@ function ComposerHarness({
   isProcessing = false,
   followUpMessageBehavior = "queue",
   steerAvailable = false,
+  models = [],
+  selectedModelId = null,
+  reasoningOptions = [],
+  selectedEffort = null,
+  reasoningSupported = false,
   selectedServiceTier = null,
+  onSelectServiceTier = () => {},
 }: HarnessProps) {
   const [draftText, setDraftText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -67,14 +93,15 @@ function ComposerHarness({
       collaborationModes={[]}
       selectedCollaborationModeId={null}
       onSelectCollaborationMode={() => {}}
-      models={[]}
-      selectedModelId={null}
+      models={models}
+      selectedModelId={selectedModelId}
       onSelectModel={() => {}}
-      reasoningOptions={[]}
-      selectedEffort={null}
+      reasoningOptions={reasoningOptions}
+      selectedEffort={selectedEffort}
       onSelectEffort={() => {}}
       selectedServiceTier={selectedServiceTier}
-      reasoningSupported={false}
+      onSelectServiceTier={onSelectServiceTier}
+      reasoningSupported={reasoningSupported}
       accessMode="current"
       onSelectAccessMode={() => {}}
       skills={[]}
@@ -120,11 +147,51 @@ describe("Composer send triggers", () => {
     expect(onSend).toHaveBeenCalledWith("from button", [], undefined, "default");
   });
 
-  it("shows the fast-mode indicator when enabled", () => {
+  it("shows and changes speed from the model settings popover", () => {
     const onSend = vi.fn();
-    render(<ComposerHarness onSend={onSend} selectedServiceTier="fast" />);
+    const onSelectServiceTier = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={onSend}
+        models={[modelOption("gpt-5.5", "GPT-5.5")]}
+        selectedModelId="gpt-5.5"
+        reasoningOptions={["low", "medium", "high", "xhigh"]}
+        selectedEffort="medium"
+        reasoningSupported={true}
+        selectedServiceTier="fast"
+        onSelectServiceTier={onSelectServiceTier}
+      />,
+    );
 
-    expect(screen.getByLabelText("Fast mode enabled")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+
+    expect(screen.getByText("Speed")).toBeTruthy();
+    expect(screen.getByText("1.5x speed, increased usage")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /Standard/i }));
+
+    expect(onSelectServiceTier).toHaveBeenCalledWith(null);
+  });
+
+  it("offers Fast mode for GPT-5.5 even when model metadata omits service tiers", () => {
+    const onSend = vi.fn();
+    const onSelectServiceTier = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={onSend}
+        models={[modelOption("gpt-5.5", "GPT-5.5")]}
+        selectedModelId="gpt-5.5"
+        reasoningOptions={["medium"]}
+        selectedEffort="medium"
+        reasoningSupported={true}
+        onSelectServiceTier={onSelectServiceTier}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Model settings" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /Fast/i }));
+
+    expect(onSelectServiceTier).toHaveBeenCalledWith("fast");
   });
 
   it("blurs the textarea after Enter send on mobile", () => {
