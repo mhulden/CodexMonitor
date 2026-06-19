@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ask, message } from "@tauri-apps/plugin-dialog";
 import type { WorkspaceInfo } from "../../../types";
-import { isMobilePlatform } from "../../../utils/platformPaths";
 import { pickWorkspacePaths } from "../../../services/tauri";
 import type { AddWorkspacesFromPathsResult } from "../../workspaces/hooks/useWorkspaceCrud";
 
-const RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY = "mobile-remote-workspace-recent-paths";
+const RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY = "remote-workspace-recent-paths";
+const LEGACY_RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY =
+  "mobile-remote-workspace-recent-paths";
 const RECENT_REMOTE_WORKSPACE_PATHS_LIMIT = 5;
 
 function parseWorkspacePathInput(value: string) {
@@ -44,7 +45,9 @@ function loadRecentRemoteWorkspacePaths(): string[] {
   if (typeof window === "undefined") {
     return [];
   }
-  const raw = window.localStorage.getItem(RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY);
+  const raw =
+    window.localStorage.getItem(RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY) ??
+    window.localStorage.getItem(LEGACY_RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY);
   if (!raw) {
     return [];
   }
@@ -71,6 +74,7 @@ function persistRecentRemoteWorkspacePaths(paths: string[]) {
     RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY,
     JSON.stringify(paths),
   );
+  window.localStorage.removeItem(LEGACY_RECENT_REMOTE_WORKSPACE_PATHS_STORAGE_KEY);
 }
 
 function mergeRecentRemoteWorkspacePaths(current: string[], nextPaths: string[]): string[] {
@@ -89,48 +93,48 @@ function mergeRecentRemoteWorkspacePaths(current: string[], nextPaths: string[])
   return merged.slice(0, RECENT_REMOTE_WORKSPACE_PATHS_LIMIT);
 }
 
-type MobileRemoteWorkspacePathPromptState = {
+type RemoteWorkspacePathPromptState = {
   value: string;
   error: string | null;
   recentPaths: string[];
 } | null;
 
 export function useWorkspaceDialogs() {
-  const [recentMobileRemoteWorkspacePaths, setRecentMobileRemoteWorkspacePaths] = useState<
+  const [recentRemoteWorkspacePaths, setRecentRemoteWorkspacePaths] = useState<
     string[]
   >(() => loadRecentRemoteWorkspacePaths());
-  const [mobileRemoteWorkspacePathPrompt, setMobileRemoteWorkspacePathPrompt] =
-    useState<MobileRemoteWorkspacePathPromptState>(null);
-  const mobileRemoteWorkspacePathResolveRef = useRef<((paths: string[]) => void) | null>(
+  const [remoteWorkspacePathPrompt, setRemoteWorkspacePathPrompt] =
+    useState<RemoteWorkspacePathPromptState>(null);
+  const remoteWorkspacePathResolveRef = useRef<((paths: string[]) => void) | null>(
     null,
   );
 
-  const resolveMobileRemoteWorkspacePathRequest = useCallback((paths: string[]) => {
-    const resolve = mobileRemoteWorkspacePathResolveRef.current;
-    mobileRemoteWorkspacePathResolveRef.current = null;
+  const resolveRemoteWorkspacePathRequest = useCallback((paths: string[]) => {
+    const resolve = remoteWorkspacePathResolveRef.current;
+    remoteWorkspacePathResolveRef.current = null;
     if (resolve) {
       resolve(paths);
     }
   }, []);
 
-  const requestMobileRemoteWorkspacePaths = useCallback(() => {
-    if (mobileRemoteWorkspacePathResolveRef.current) {
-      resolveMobileRemoteWorkspacePathRequest([]);
+  const requestRemoteWorkspacePaths = useCallback(() => {
+    if (remoteWorkspacePathResolveRef.current) {
+      resolveRemoteWorkspacePathRequest([]);
     }
 
-    setMobileRemoteWorkspacePathPrompt({
+    setRemoteWorkspacePathPrompt({
       value: "",
       error: null,
-      recentPaths: recentMobileRemoteWorkspacePaths,
+      recentPaths: recentRemoteWorkspacePaths,
     });
 
     return new Promise<string[]>((resolve) => {
-      mobileRemoteWorkspacePathResolveRef.current = resolve;
+      remoteWorkspacePathResolveRef.current = resolve;
     });
-  }, [recentMobileRemoteWorkspacePaths, resolveMobileRemoteWorkspacePathRequest]);
+  }, [recentRemoteWorkspacePaths, resolveRemoteWorkspacePathRequest]);
 
-  const updateMobileRemoteWorkspacePathInput = useCallback((value: string) => {
-    setMobileRemoteWorkspacePathPrompt((prev) =>
+  const updateRemoteWorkspacePathInput = useCallback((value: string) => {
+    setRemoteWorkspacePathPrompt((prev) =>
       prev
         ? {
             ...prev,
@@ -141,13 +145,13 @@ export function useWorkspaceDialogs() {
     );
   }, []);
 
-  const cancelMobileRemoteWorkspacePathPrompt = useCallback(() => {
-    setMobileRemoteWorkspacePathPrompt(null);
-    resolveMobileRemoteWorkspacePathRequest([]);
-  }, [resolveMobileRemoteWorkspacePathRequest]);
+  const cancelRemoteWorkspacePathPrompt = useCallback(() => {
+    setRemoteWorkspacePathPrompt(null);
+    resolveRemoteWorkspacePathRequest([]);
+  }, [resolveRemoteWorkspacePathRequest]);
 
-  const appendMobileRemoteWorkspacePathFromRecent = useCallback((path: string) => {
-    setMobileRemoteWorkspacePathPrompt((prev) =>
+  const appendRemoteWorkspacePathFromRecent = useCallback((path: string) => {
+    setRemoteWorkspacePathPrompt((prev) =>
       prev
         ? {
             ...prev,
@@ -158,13 +162,13 @@ export function useWorkspaceDialogs() {
     );
   }, []);
 
-  const rememberRecentMobileRemoteWorkspacePaths = useCallback((paths: string[]) => {
-    setRecentMobileRemoteWorkspacePaths((prev) => {
+  const rememberRecentRemoteWorkspacePaths = useCallback((paths: string[]) => {
+    setRecentRemoteWorkspacePaths((prev) => {
       const next = mergeRecentRemoteWorkspacePaths(prev, paths);
       persistRecentRemoteWorkspacePaths(next);
       return next;
     });
-    setMobileRemoteWorkspacePathPrompt((prev) =>
+    setRemoteWorkspacePathPrompt((prev) =>
       prev
         ? {
             ...prev,
@@ -174,13 +178,13 @@ export function useWorkspaceDialogs() {
     );
   }, []);
 
-  const submitMobileRemoteWorkspacePathPrompt = useCallback(() => {
-    if (!mobileRemoteWorkspacePathPrompt) {
+  const submitRemoteWorkspacePathPrompt = useCallback(() => {
+    if (!remoteWorkspacePathPrompt) {
       return;
     }
-    const paths = parseWorkspacePathInput(mobileRemoteWorkspacePathPrompt.value);
+    const paths = parseWorkspacePathInput(remoteWorkspacePathPrompt.value);
     if (paths.length === 0) {
-      setMobileRemoteWorkspacePathPrompt((prev) =>
+      setRemoteWorkspacePathPrompt((prev) =>
         prev
           ? {
               ...prev,
@@ -190,22 +194,22 @@ export function useWorkspaceDialogs() {
       );
       return;
     }
-    setMobileRemoteWorkspacePathPrompt(null);
-    resolveMobileRemoteWorkspacePathRequest(paths);
-  }, [mobileRemoteWorkspacePathPrompt, resolveMobileRemoteWorkspacePathRequest]);
+    setRemoteWorkspacePathPrompt(null);
+    resolveRemoteWorkspacePathRequest(paths);
+  }, [remoteWorkspacePathPrompt, resolveRemoteWorkspacePathRequest]);
 
   useEffect(() => {
     return () => {
-      resolveMobileRemoteWorkspacePathRequest([]);
+      resolveRemoteWorkspacePathRequest([]);
     };
-  }, [resolveMobileRemoteWorkspacePathRequest]);
+  }, [resolveRemoteWorkspacePathRequest]);
 
   const requestWorkspacePaths = useCallback(async (backendMode?: string) => {
-    if (isMobilePlatform() && backendMode === "remote") {
-      return requestMobileRemoteWorkspacePaths();
+    if (backendMode === "remote") {
+      return requestRemoteWorkspacePaths();
     }
     return pickWorkspacePaths();
-  }, [requestMobileRemoteWorkspacePaths]);
+  }, [requestRemoteWorkspacePaths]);
 
   const showAddWorkspacesResult = useCallback(
     async (result: AddWorkspacesFromPathsResult) => {
@@ -326,12 +330,12 @@ export function useWorkspaceDialogs() {
 
   return {
     requestWorkspacePaths,
-    mobileRemoteWorkspacePathPrompt,
-    updateMobileRemoteWorkspacePathInput,
-    cancelMobileRemoteWorkspacePathPrompt,
-    submitMobileRemoteWorkspacePathPrompt,
-    appendMobileRemoteWorkspacePathFromRecent,
-    rememberRecentMobileRemoteWorkspacePaths,
+    remoteWorkspacePathPrompt,
+    updateRemoteWorkspacePathInput,
+    cancelRemoteWorkspacePathPrompt,
+    submitRemoteWorkspacePathPrompt,
+    appendRemoteWorkspacePathFromRecent,
+    rememberRecentRemoteWorkspacePaths,
     showAddWorkspacesResult,
     confirmWorkspaceRemoval,
     confirmWorktreeRemoval,

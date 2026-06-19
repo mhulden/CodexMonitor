@@ -73,11 +73,11 @@ type UseMainAppModalsArgs = {
     persistProjectCopiesFolder: (groupId: string, copiesFolder: string) => Promise<void>;
     onCompactActivate?: () => void;
     onWorkspacePromptError: (message: string, kind: "worktree" | "clone") => void;
-    mobileRemoteWorkspacePathPrompt: AppModalsProps["mobileRemoteWorkspacePathPrompt"];
-    updateMobileRemoteWorkspacePathInput: (value: string) => void;
-    appendMobileRemoteWorkspacePathFromRecent: (path: string) => void;
-    cancelMobileRemoteWorkspacePathPrompt: () => void;
-    submitMobileRemoteWorkspacePathPrompt: () => void;
+    remoteWorkspacePathPrompt: AppModalsProps["remoteWorkspacePathPrompt"];
+    updateRemoteWorkspacePathInput: (value: string) => void;
+    appendRemoteWorkspacePathFromRecent: (path: string) => void;
+    cancelRemoteWorkspacePathPrompt: () => void;
+    submitRemoteWorkspacePathPrompt: () => void;
     openWorkspaceFromUrlPrompt: () => void;
     workspaceFromUrl: Pick<
       AppModalsProps,
@@ -241,11 +241,11 @@ type BuildAppModalsPropsArgs = {
         | "onWorkspaceFromUrlPromptCancel"
         | "onWorkspaceFromUrlPromptConfirm"
       >;
-  mobileRemoteWorkspacePathPrompt: AppModalsProps["mobileRemoteWorkspacePathPrompt"];
-  onMobileRemoteWorkspacePathPromptChange: (value: string) => void;
-  onMobileRemoteWorkspacePathPromptRecentPathSelect: (path: string) => void;
-  onMobileRemoteWorkspacePathPromptCancel: () => void;
-  onMobileRemoteWorkspacePathPromptConfirm: () => void;
+  remoteWorkspacePathPrompt: AppModalsProps["remoteWorkspacePathPrompt"];
+  onRemoteWorkspacePathPromptChange: (value: string) => void;
+  onRemoteWorkspacePathPromptRecentPathSelect: (path: string) => void;
+  onRemoteWorkspacePathPromptCancel: () => void;
+  onRemoteWorkspacePathPromptConfirm: () => void;
   branchSwitcher: AppModalsProps["branchSwitcher"];
   branches: BranchInfo[];
   workspaces: WorkspaceInfo[];
@@ -288,11 +288,11 @@ function buildAppModalsProps({
   onClonePromptCancel,
   onClonePromptConfirm,
   workspaceFromUrl,
-  mobileRemoteWorkspacePathPrompt,
-  onMobileRemoteWorkspacePathPromptChange,
-  onMobileRemoteWorkspacePathPromptRecentPathSelect,
-  onMobileRemoteWorkspacePathPromptCancel,
-  onMobileRemoteWorkspacePathPromptConfirm,
+  remoteWorkspacePathPrompt,
+  onRemoteWorkspacePathPromptChange,
+  onRemoteWorkspacePathPromptRecentPathSelect,
+  onRemoteWorkspacePathPromptCancel,
+  onRemoteWorkspacePathPromptConfirm,
   branchSwitcher,
   branches,
   workspaces,
@@ -334,11 +334,11 @@ function buildAppModalsProps({
     onClonePromptCancel,
     onClonePromptConfirm,
     ...workspaceFromUrl,
-    mobileRemoteWorkspacePathPrompt,
-    onMobileRemoteWorkspacePathPromptChange,
-    onMobileRemoteWorkspacePathPromptRecentPathSelect,
-    onMobileRemoteWorkspacePathPromptCancel,
-    onMobileRemoteWorkspacePathPromptConfirm,
+    remoteWorkspacePathPrompt,
+    onRemoteWorkspacePathPromptChange,
+    onRemoteWorkspacePathPromptRecentPathSelect,
+    onRemoteWorkspacePathPromptCancel,
+    onRemoteWorkspacePathPromptConfirm,
     branchSwitcher,
     branches,
     workspaces,
@@ -495,16 +495,16 @@ export function useMainAppModals({
         onClonePromptCancel: cancelClonePrompt,
         onClonePromptConfirm: confirmClonePrompt,
         workspaceFromUrl: workspacePrompts.workspaceFromUrl,
-        mobileRemoteWorkspacePathPrompt:
-          workspacePrompts.mobileRemoteWorkspacePathPrompt,
-        onMobileRemoteWorkspacePathPromptChange:
-          workspacePrompts.updateMobileRemoteWorkspacePathInput,
-        onMobileRemoteWorkspacePathPromptRecentPathSelect:
-          workspacePrompts.appendMobileRemoteWorkspacePathFromRecent,
-        onMobileRemoteWorkspacePathPromptCancel:
-          workspacePrompts.cancelMobileRemoteWorkspacePathPrompt,
-        onMobileRemoteWorkspacePathPromptConfirm:
-          workspacePrompts.submitMobileRemoteWorkspacePathPrompt,
+        remoteWorkspacePathPrompt:
+          workspacePrompts.remoteWorkspacePathPrompt,
+        onRemoteWorkspacePathPromptChange:
+          workspacePrompts.updateRemoteWorkspacePathInput,
+        onRemoteWorkspacePathPromptRecentPathSelect:
+          workspacePrompts.appendRemoteWorkspacePathFromRecent,
+        onRemoteWorkspacePathPromptCancel:
+          workspacePrompts.cancelRemoteWorkspacePathPrompt,
+        onRemoteWorkspacePathPromptConfirm:
+          workspacePrompts.submitRemoteWorkspacePathPrompt,
         branchSwitcher,
         branches,
         workspaces,

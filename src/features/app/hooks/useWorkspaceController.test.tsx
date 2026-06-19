@@ -10,7 +10,6 @@ import {
   pickWorkspacePaths,
   removeWorkspace,
 } from "../../../services/tauri";
-import { isMobilePlatform } from "../../../utils/platformPaths";
 import { useWorkspaceController } from "./useWorkspaceController";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
@@ -32,10 +31,6 @@ vi.mock("../../../services/tauri", () => ({
   renameWorktree: vi.fn(),
   renameWorktreeUpstream: vi.fn(),
   updateWorkspaceSettings: vi.fn(),
-}));
-
-vi.mock("../../../utils/platformPaths", () => ({
-  isMobilePlatform: vi.fn(() => false),
 }));
 
 const workspaceOne: WorkspaceInfo = {
@@ -69,7 +64,6 @@ const baseAppSettings = {
 describe("useWorkspaceController dialogs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(isMobilePlatform).mockReturnValue(false);
     window.localStorage.clear();
   });
 
@@ -132,8 +126,7 @@ describe("useWorkspaceController dialogs", () => {
     );
   });
 
-  it("opens the in-app remote path prompt on mobile remote mode", async () => {
-    vi.mocked(isMobilePlatform).mockReturnValue(true);
+  it("opens the in-app remote path prompt in remote mode", async () => {
     vi.mocked(listWorkspaces).mockResolvedValue([]);
     vi.mocked(isWorkspacePathDir).mockResolvedValue(true);
     vi.mocked(addWorkspace).mockResolvedValue(workspaceOne);
@@ -158,15 +151,15 @@ describe("useWorkspaceController dialogs", () => {
       addPromise = result.current.addWorkspace();
     });
 
-    expect(result.current.mobileRemoteWorkspacePathPrompt).not.toBeNull();
+    expect(result.current.remoteWorkspacePathPrompt).not.toBeNull();
     expect(pickWorkspacePaths).not.toHaveBeenCalled();
 
     await act(async () => {
-      result.current.updateMobileRemoteWorkspacePathInput("/srv/codex-monitor");
+      result.current.updateRemoteWorkspacePathInput("/srv/codex-monitor");
     });
 
     await act(async () => {
-      result.current.submitMobileRemoteWorkspacePathPrompt();
+      result.current.submitRemoteWorkspacePathPrompt();
     });
 
     let added: WorkspaceInfo | null = null;
@@ -176,16 +169,15 @@ describe("useWorkspaceController dialogs", () => {
 
     expect(added).toMatchObject({ id: workspaceOne.id });
     expect(isWorkspacePathDir).toHaveBeenCalledWith("/srv/codex-monitor");
-    expect(result.current.mobileRemoteWorkspacePathPrompt).toBeNull();
-    expect(window.localStorage.getItem("mobile-remote-workspace-recent-paths")).toBe(
+    expect(result.current.remoteWorkspacePathPrompt).toBeNull();
+    expect(window.localStorage.getItem("remote-workspace-recent-paths")).toBe(
       JSON.stringify(["/tmp/ws-1"]),
     );
   });
 
   it("appends selected recent path only when missing", async () => {
-    vi.mocked(isMobilePlatform).mockReturnValue(true);
     window.localStorage.setItem(
-      "mobile-remote-workspace-recent-paths",
+      "remote-workspace-recent-paths",
       JSON.stringify(["/srv/one", "/srv/two"]),
     );
     vi.mocked(listWorkspaces).mockResolvedValue([]);
@@ -209,31 +201,61 @@ describe("useWorkspaceController dialogs", () => {
       void result.current.addWorkspace();
     });
 
-    expect(result.current.mobileRemoteWorkspacePathPrompt?.recentPaths).toEqual([
+    expect(result.current.remoteWorkspacePathPrompt?.recentPaths).toEqual([
       "/srv/one",
       "/srv/two",
     ]);
 
     await act(async () => {
-      result.current.appendMobileRemoteWorkspacePathFromRecent("/srv/one");
+      result.current.appendRemoteWorkspacePathFromRecent("/srv/one");
     });
-    expect(result.current.mobileRemoteWorkspacePathPrompt?.value).toBe("/srv/one");
+    expect(result.current.remoteWorkspacePathPrompt?.value).toBe("/srv/one");
 
     await act(async () => {
-      result.current.appendMobileRemoteWorkspacePathFromRecent("/srv/one");
+      result.current.appendRemoteWorkspacePathFromRecent("/srv/one");
     });
-    expect(result.current.mobileRemoteWorkspacePathPrompt?.value).toBe("/srv/one");
+    expect(result.current.remoteWorkspacePathPrompt?.value).toBe("/srv/one");
 
     await act(async () => {
-      result.current.appendMobileRemoteWorkspacePathFromRecent("/srv/two");
+      result.current.appendRemoteWorkspacePathFromRecent("/srv/two");
     });
-    expect(result.current.mobileRemoteWorkspacePathPrompt?.value).toBe(
+    expect(result.current.remoteWorkspacePathPrompt?.value).toBe(
       "/srv/one\n/srv/two",
     );
   });
 
-  it("accepts quoted mobile remote paths", async () => {
-    vi.mocked(isMobilePlatform).mockReturnValue(true);
+  it("loads legacy mobile remote recents for the generic remote prompt", async () => {
+    window.localStorage.setItem(
+      "mobile-remote-workspace-recent-paths",
+      JSON.stringify(["/srv/legacy"]),
+    );
+    vi.mocked(listWorkspaces).mockResolvedValue([]);
+
+    const { result } = renderHook(() =>
+      useWorkspaceController({
+        appSettings: {
+          ...baseAppSettings,
+          backendMode: "remote",
+        },
+        addDebugEntry: vi.fn(),
+        queueSaveSettings: vi.fn(async (next) => next),
+      }),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      void result.current.addWorkspace();
+    });
+
+    expect(result.current.remoteWorkspacePathPrompt?.recentPaths).toEqual([
+      "/srv/legacy",
+    ]);
+  });
+
+  it("accepts quoted remote paths", async () => {
     vi.mocked(listWorkspaces).mockResolvedValue([]);
     vi.mocked(isWorkspacePathDir).mockResolvedValue(true);
     vi.mocked(addWorkspace).mockResolvedValue(workspaceOne);
@@ -259,11 +281,11 @@ describe("useWorkspaceController dialogs", () => {
     });
 
     await act(async () => {
-      result.current.updateMobileRemoteWorkspacePathInput("'~/dev/personal'");
+      result.current.updateRemoteWorkspacePathInput("'~/dev/personal'");
     });
 
     await act(async () => {
-      result.current.submitMobileRemoteWorkspacePathPrompt();
+      result.current.submitRemoteWorkspacePathPrompt();
     });
 
     await act(async () => {

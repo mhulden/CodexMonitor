@@ -2,19 +2,19 @@
 import { useState } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MobileRemoteWorkspacePrompt } from "./MobileRemoteWorkspacePrompt";
+import { RemoteWorkspacePathPrompt } from "./RemoteWorkspacePathPrompt";
 
 afterEach(() => {
   cleanup();
 });
 
-describe("MobileRemoteWorkspacePrompt", () => {
+describe("RemoteWorkspacePathPrompt", () => {
   it("focuses paths textarea and moves caret to end after selecting a recent path", async () => {
     const recentPath = "/Users/vlad/dev/codex-monitor/cm";
     function PromptHarness() {
       const [value, setValue] = useState("");
       return (
-        <MobileRemoteWorkspacePrompt
+        <RemoteWorkspacePathPrompt
           value={value}
           error={null}
           recentPaths={[recentPath]}

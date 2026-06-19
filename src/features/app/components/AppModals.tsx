@@ -29,9 +29,9 @@ const WorkspaceFromUrlPrompt = lazy(() =>
     default: module.WorkspaceFromUrlPrompt,
   })),
 );
-const MobileRemoteWorkspacePrompt = lazy(() =>
-  import("../../workspaces/components/MobileRemoteWorkspacePrompt").then((module) => ({
-    default: module.MobileRemoteWorkspacePrompt,
+const RemoteWorkspacePathPrompt = lazy(() =>
+  import("../../workspaces/components/RemoteWorkspacePathPrompt").then((module) => ({
+    default: module.RemoteWorkspacePathPrompt,
   })),
 );
 const BranchSwitcherPrompt = lazy(() =>
@@ -53,7 +53,7 @@ type ClonePromptState = ReturnType<typeof useClonePrompt>["clonePrompt"];
 type WorkspaceFromUrlPromptState = ReturnType<
   typeof useWorkspaceFromUrlPrompt
 >["workspaceFromUrlPrompt"];
-type MobileRemoteWorkspacePathPromptState = {
+type RemoteWorkspacePathPromptState = {
   value: string;
   error: string | null;
   recentPaths: string[];
@@ -101,11 +101,11 @@ export type AppModalsProps = {
   onWorkspaceFromUrlPromptClearDestinationPath: () => void;
   onWorkspaceFromUrlPromptCancel: () => void;
   onWorkspaceFromUrlPromptConfirm: () => void;
-  mobileRemoteWorkspacePathPrompt: MobileRemoteWorkspacePathPromptState;
-  onMobileRemoteWorkspacePathPromptChange: (value: string) => void;
-  onMobileRemoteWorkspacePathPromptRecentPathSelect: (path: string) => void;
-  onMobileRemoteWorkspacePathPromptCancel: () => void;
-  onMobileRemoteWorkspacePathPromptConfirm: () => void;
+  remoteWorkspacePathPrompt: RemoteWorkspacePathPromptState;
+  onRemoteWorkspacePathPromptChange: (value: string) => void;
+  onRemoteWorkspacePathPromptRecentPathSelect: (path: string) => void;
+  onRemoteWorkspacePathPromptCancel: () => void;
+  onRemoteWorkspacePathPromptConfirm: () => void;
   branchSwitcher: BranchSwitcherState;
   branches: BranchInfo[];
   workspaces: WorkspaceInfo[];
@@ -155,11 +155,11 @@ export const AppModals = memo(function AppModals({
   onWorkspaceFromUrlPromptClearDestinationPath,
   onWorkspaceFromUrlPromptCancel,
   onWorkspaceFromUrlPromptConfirm,
-  mobileRemoteWorkspacePathPrompt,
-  onMobileRemoteWorkspacePathPromptChange,
-  onMobileRemoteWorkspacePathPromptRecentPathSelect,
-  onMobileRemoteWorkspacePathPromptCancel,
-  onMobileRemoteWorkspacePathPromptConfirm,
+  remoteWorkspacePathPrompt,
+  onRemoteWorkspacePathPromptChange,
+  onRemoteWorkspacePathPromptRecentPathSelect,
+  onRemoteWorkspacePathPromptCancel,
+  onRemoteWorkspacePathPromptConfirm,
   branchSwitcher,
   branches,
   workspaces,
@@ -268,16 +268,16 @@ export const AppModals = memo(function AppModals({
           />
         </Suspense>
       )}
-      {mobileRemoteWorkspacePathPrompt && (
+      {remoteWorkspacePathPrompt && (
         <Suspense fallback={null}>
-          <MobileRemoteWorkspacePrompt
-            value={mobileRemoteWorkspacePathPrompt.value}
-            error={mobileRemoteWorkspacePathPrompt.error}
-            recentPaths={mobileRemoteWorkspacePathPrompt.recentPaths}
-            onChange={onMobileRemoteWorkspacePathPromptChange}
-            onRecentPathSelect={onMobileRemoteWorkspacePathPromptRecentPathSelect}
-            onCancel={onMobileRemoteWorkspacePathPromptCancel}
-            onConfirm={onMobileRemoteWorkspacePathPromptConfirm}
+          <RemoteWorkspacePathPrompt
+            value={remoteWorkspacePathPrompt.value}
+            error={remoteWorkspacePathPrompt.error}
+            recentPaths={remoteWorkspacePathPrompt.recentPaths}
+            onChange={onRemoteWorkspacePathPromptChange}
+            onRecentPathSelect={onRemoteWorkspacePathPromptRecentPathSelect}
+            onCancel={onRemoteWorkspacePathPromptCancel}
+            onConfirm={onRemoteWorkspacePathPromptConfirm}
           />
         </Suspense>
       )}

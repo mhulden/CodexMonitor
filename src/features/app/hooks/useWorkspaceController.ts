@@ -3,7 +3,6 @@ import { useWorkspaces } from "../../workspaces/hooks/useWorkspaces";
 import type { AppSettings, WorkspaceInfo } from "../../../types";
 import type { DebugEntry } from "../../../types";
 import { useWorkspaceDialogs } from "./useWorkspaceDialogs";
-import { isMobilePlatform } from "../../../utils/platformPaths";
 
 type WorkspaceControllerOptions = {
   appSettings: AppSettings;
@@ -31,12 +30,12 @@ export function useWorkspaceController({
 
   const {
     requestWorkspacePaths,
-    mobileRemoteWorkspacePathPrompt,
-    updateMobileRemoteWorkspacePathInput,
-    cancelMobileRemoteWorkspacePathPrompt,
-    submitMobileRemoteWorkspacePathPrompt,
-    appendMobileRemoteWorkspacePathFromRecent,
-    rememberRecentMobileRemoteWorkspacePaths,
+    remoteWorkspacePathPrompt,
+    updateRemoteWorkspacePathInput,
+    cancelRemoteWorkspacePathPrompt,
+    submitRemoteWorkspacePathPrompt,
+    appendRemoteWorkspacePathFromRecent,
+    rememberRecentRemoteWorkspacePaths,
     showAddWorkspacesResult,
     confirmWorkspaceRemoval,
     confirmWorktreeRemoval,
@@ -47,18 +46,18 @@ export function useWorkspaceController({
   const runAddWorkspacesFromPaths = useCallback(
     async (
       paths: string[],
-      options?: { rememberMobileRemoteRecents?: boolean },
+      options?: { rememberRemoteRecents?: boolean },
     ) => {
       const result = await addWorkspacesFromPathsCore(paths);
       await showAddWorkspacesResult(result);
-      if (options?.rememberMobileRemoteRecents && result.added.length > 0) {
-        rememberRecentMobileRemoteWorkspacePaths(result.added.map((entry) => entry.path));
+      if (options?.rememberRemoteRecents && result.added.length > 0) {
+        rememberRecentRemoteWorkspacePaths(result.added.map((entry) => entry.path));
       }
       return result;
     },
     [
       addWorkspacesFromPathsCore,
-      rememberRecentMobileRemoteWorkspacePaths,
+      rememberRecentRemoteWorkspacePaths,
       showAddWorkspacesResult,
     ],
   );
@@ -77,7 +76,7 @@ export function useWorkspaceController({
       return null;
     }
     const result = await runAddWorkspacesFromPaths(paths, {
-      rememberMobileRemoteRecents: isMobilePlatform() && appSettings.backendMode === "remote",
+      rememberRemoteRecents: appSettings.backendMode === "remote",
     });
     return result.firstAdded;
   }, [appSettings.backendMode, requestWorkspacePaths, runAddWorkspacesFromPaths]);
@@ -116,11 +115,11 @@ export function useWorkspaceController({
     ...workspaceCore,
     addWorkspace,
     addWorkspacesFromPaths,
-    mobileRemoteWorkspacePathPrompt,
-    updateMobileRemoteWorkspacePathInput,
-    cancelMobileRemoteWorkspacePathPrompt,
-    submitMobileRemoteWorkspacePathPrompt,
-    appendMobileRemoteWorkspacePathFromRecent,
+    remoteWorkspacePathPrompt,
+    updateRemoteWorkspacePathInput,
+    cancelRemoteWorkspacePathPrompt,
+    submitRemoteWorkspacePathPrompt,
+    appendRemoteWorkspacePathFromRecent,
     removeWorkspace,
     removeWorktree,
   };
