@@ -603,6 +603,33 @@ describe("Markdown file-like href behavior", () => {
     expect(container.querySelector(".katex-display")).toBeTruthy();
   });
 
+  it("renders single-line \\[display\\] math after prose labels", () => {
+    const { container } = render(
+      <Markdown
+        value={String.raw`Display: \[\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}\]`}
+        className="markdown"
+        enableMathRendering
+      />,
+    );
+
+    expect(container.textContent).toContain("Display:");
+    expect(container.querySelector(".katex-display")).toBeTruthy();
+  });
+
+  it("does not treat currency-like single dollars as inline math", () => {
+    const { container } = render(
+      <Markdown
+        value="This costs $5 and that costs $10. Math still works: $x+1$"
+        className="markdown"
+        enableMathRendering
+      />,
+    );
+
+    expect(container.querySelectorAll(".katex").length).toBe(1);
+    expect(container.textContent).toContain("$5");
+    expect(container.textContent).toContain("$10");
+  });
+
   it("does not render math inside fenced code blocks", () => {
     const { container } = render(
       <Markdown

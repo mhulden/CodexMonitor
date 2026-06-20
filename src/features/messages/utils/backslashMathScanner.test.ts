@@ -22,6 +22,21 @@ describe("normalizeBackslashMathDelimiters", () => {
     ].join("\n"));
   });
 
+  it("converts single-line backslash display math embedded after prose", () => {
+    const input =
+      String.raw`Display: \[\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}\]`;
+
+    const normalized = normalizeBackslashMathDelimiters(input);
+
+    expect(normalized).toBe([
+      "Display:",
+      "",
+      "$$",
+      String.raw`\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}`,
+      "$$",
+    ].join("\n"));
+  });
+
   it("keeps escaped inline delimiters literal", () => {
     const input = "Literal: \\\\(x\\\\), parsed: \\(z^2\\)";
     const normalized = normalizeBackslashMathDelimiters(input);
@@ -189,6 +204,37 @@ describe("normalizeBackslashMathDelimiters", () => {
 
     expect(normalized).toContain(String.raw`Escaped: \\[ literal \\]`);
     expect(normalized).toContain(["$$", "E=mc^2", "$$"].join("\n"));
+  });
+
+  it("applies Pandoc-style single-dollar guards for currency-like text", () => {
+    const input = [
+      String.raw`Inline math: $e^{i\pi}+1=0$ and $\nabla \cdot \mathbf{E}$`,
+      "Currency: This costs $5 and that costs $10.",
+      "Digit after closer: $x$10 remains literal.",
+      String.raw`Escaped: \$5 and valid: $x+1$`,
+    ].join("\n");
+
+    const normalized = normalizeBackslashMathDelimiters(input);
+
+    expect(normalized).toContain(String.raw`$e^{i\pi}+1=0$`);
+    expect(normalized).toContain(String.raw`$\nabla \cdot \mathbf{E}$`);
+    expect(normalized).toContain(String.raw`This costs \$5 and that costs \$10.`);
+    expect(normalized).toContain(String.raw`\$x\$10 remains literal.`);
+    expect(normalized).toContain(String.raw`Escaped: \$5 and valid: $x+1$`);
+  });
+
+  it("does not guard single dollars inside double-dollar display math", () => {
+    const input = [
+      "$$",
+      String.raw`\text{Price is $5}`,
+      "$$",
+      "Outside $5 and $10",
+    ].join("\n");
+
+    const normalized = normalizeBackslashMathDelimiters(input);
+
+    expect(normalized).toContain(["$$", String.raw`\text{Price is $5}`, "$$"].join("\n"));
+    expect(normalized).toContain(String.raw`Outside \$5 and \$10`);
   });
 });
 

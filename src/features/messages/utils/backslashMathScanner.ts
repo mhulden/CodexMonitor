@@ -294,13 +294,7 @@ function maskUrlLiterals(value: string) {
     const referenceDefinitionMatch = line.match(/^(\s{0,3}\[[^\]]+\]:\s*)(\S+)(.*)$/);
     if (referenceDefinitionMatch) {
       const prefix = referenceDefinitionMatch[1] ?? "";
-      const rawDestination = referenceDefinitionMatch[2] ?? "";
-      const suffix = referenceDefinitionMatch[3] ?? "";
-      if (rawDestination.startsWith("<") && rawDestination.endsWith(">")) {
-        const innerDestination = rawDestination.slice(1, -1);
-        return `${prefix}<${toPlaceholder(innerDestination)}>${suffix}`;
-      }
-      return `${prefix}${toPlaceholder(rawDestination)}${suffix}`;
+      return `${prefix}${toPlaceholder(line.slice(prefix.length))}`;
     }
 
     const withAutolinksMasked = line.replace(
@@ -374,6 +368,174 @@ function replaceInlineBackslashDelimiters(value: string) {
   }
 
   output += value.slice(cursor);
+  return output;
+}
+
+function appendDisplayMathBlock(output: string, body: string) {
+  let next = output.replace(/[ \t]+$/, "");
+  if (next.length > 0 && !next.endsWith("\n")) {
+    next += "\n\n";
+  }
+  next += `$$\n${body}\n$$`;
+  return next;
+}
+
+function replaceSingleLineBackslashDisplayDelimiters(value: string) {
+  let output = "";
+  let cursor = 0;
+  let index = 0;
+
+  while (index < value.length) {
+    if (
+      value[index] === "\\" &&
+      index + 1 < value.length &&
+      value[index + 1] === "[" &&
+      !isEscaped(value, index)
+    ) {
+      const start = index;
+      let closeIndex = -1;
+      let scan = index + 2;
+      while (scan < value.length) {
+        if (value[scan] === "\n" || value[scan] === "\r") {
+          break;
+        }
+        if (
+          value[scan] === "\\" &&
+          scan + 1 < value.length &&
+          value[scan + 1] === "]" &&
+          !isEscaped(value, scan)
+        ) {
+          closeIndex = scan;
+          break;
+        }
+        scan += 1;
+      }
+
+      if (closeIndex >= 0) {
+        const body = value.slice(start + 2, closeIndex).trim();
+        if (body.length > 0) {
+          output = appendDisplayMathBlock(output + value.slice(cursor, start), body);
+          const nextIndex = closeIndex + 2;
+          if (nextIndex < value.length && value[nextIndex] !== "\n" && value[nextIndex] !== "\r") {
+            output += "\n\n";
+          }
+          index = nextIndex;
+          cursor = nextIndex;
+          continue;
+        }
+      }
+    }
+
+    index += 1;
+  }
+
+  output += value.slice(cursor);
+  return output;
+}
+
+function isSingleDollar(value: string, index: number) {
+  return (
+    value[index] === "$" &&
+    !isEscaped(value, index) &&
+    value[index - 1] !== "$" &&
+    value[index + 1] !== "$"
+  );
+}
+
+function isValidSingleDollarOpener(value: string, index: number) {
+  const next = value[index + 1];
+  return Boolean(next) && !/\s/.test(next);
+}
+
+function isValidSingleDollarCloser(value: string, index: number) {
+  const previous = value[index - 1];
+  const next = value[index + 1];
+  return Boolean(previous) && !/\s/.test(previous) && !/[0-9]/.test(next ?? "");
+}
+
+function collectDoubleDollarMathRanges(value: string) {
+  const ranges: Array<[number, number]> = [];
+  let index = 0;
+
+  while (index < value.length) {
+    if (
+      value[index] !== "$" ||
+      value[index + 1] !== "$" ||
+      isEscaped(value, index)
+    ) {
+      index += 1;
+      continue;
+    }
+
+    const start = index;
+    let closeIndex = index + 2;
+    while (closeIndex < value.length) {
+      if (
+        value[closeIndex] === "$" &&
+        value[closeIndex + 1] === "$" &&
+        !isEscaped(value, closeIndex)
+      ) {
+        ranges.push([start, closeIndex + 2]);
+        index = closeIndex + 2;
+        break;
+      }
+      closeIndex += 1;
+    }
+
+    if (closeIndex >= value.length) {
+      index += 2;
+    }
+  }
+
+  return ranges;
+}
+
+function escapeInvalidSingleDollarDelimiters(value: string) {
+  const protectedRanges = collectDoubleDollarMathRanges(value);
+  const isProtected = (position: number) =>
+    protectedRanges.some(([start, end]) => position >= start && position < end);
+  const isGuardableSingleDollar = (position: number) =>
+    !isProtected(position) && isSingleDollar(value, position);
+  const validDelimiterIndexes = new Set<number>();
+  let index = 0;
+
+  while (index < value.length) {
+    if (!isGuardableSingleDollar(index) || !isValidSingleDollarOpener(value, index)) {
+      index += 1;
+      continue;
+    }
+
+    let closeIndex = index + 1;
+    let foundClose = false;
+    while (closeIndex < value.length) {
+      if (value[closeIndex] === "\n" || value[closeIndex] === "\r") {
+        break;
+      }
+      if (isGuardableSingleDollar(closeIndex)) {
+        if (isValidSingleDollarCloser(value, closeIndex)) {
+          validDelimiterIndexes.add(index);
+          validDelimiterIndexes.add(closeIndex);
+          index = closeIndex + 1;
+          foundClose = true;
+        }
+        break;
+      }
+      closeIndex += 1;
+    }
+
+    if (!foundClose) {
+      index += 1;
+    }
+  }
+
+  let output = "";
+  for (let cursor = 0; cursor < value.length; cursor += 1) {
+    if (isGuardableSingleDollar(cursor) && !validDelimiterIndexes.has(cursor)) {
+      output += "\\$";
+    } else {
+      output += value[cursor];
+    }
+  }
   return output;
 }
 
@@ -460,8 +622,10 @@ function normalizeBackslashMathDelimitersInChunk(value: string) {
   const { masked: linkMasked, restore: restoreLinks } = maskMarkdownLinkDestinations(inlineCodeMasked);
   const { masked: urlMasked, restore: restoreUrls } = maskUrlLiterals(linkMasked);
   const withBlockMath = convertBackslashBlockDelimiters(urlMasked);
-  const withInlineMath = replaceInlineBackslashDelimiters(withBlockMath);
-  return restoreInlineCode(restoreLinks(restoreUrls(withInlineMath)));
+  const withSingleLineDisplayMath = replaceSingleLineBackslashDisplayDelimiters(withBlockMath);
+  const withInlineMath = replaceInlineBackslashDelimiters(withSingleLineDisplayMath);
+  const withDollarGuard = escapeInvalidSingleDollarDelimiters(withInlineMath);
+  return restoreInlineCode(restoreLinks(restoreUrls(withDollarGuard)));
 }
 
 export function normalizeBackslashMathDelimiters(value: string) {
