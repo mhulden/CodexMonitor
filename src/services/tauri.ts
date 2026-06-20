@@ -810,6 +810,10 @@ export async function consumeRateLimitResetCredit(
   });
 }
 
+export async function getRateLimitResetCredits(workspaceId: string) {
+  return invoke<any>("account_rate_limit_reset_credits", { workspaceId });
+}
+
 export async function getAccountInfo(workspaceId: string) {
   return invoke<any>("account_read", { workspaceId });
 }

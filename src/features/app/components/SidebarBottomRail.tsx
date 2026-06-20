@@ -1,10 +1,16 @@
+import Info from "lucide-react/dist/esm/icons/info";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import ScrollText from "lucide-react/dist/esm/icons/scroll-text";
 import Settings from "lucide-react/dist/esm/icons/settings";
 import User from "lucide-react/dist/esm/icons/user";
 import X from "lucide-react/dist/esm/icons/x";
 import { useEffect, useMemo, useState } from "react";
-import type { SavedAccountProfile } from "../../../types";
+import type {
+  RateLimitResetCreditSnapshot,
+  RateLimitResetCreditsSnapshot,
+  SavedAccountProfile,
+} from "../../../types";
+import { formatRelativeTime } from "../../../utils/time";
 import { getUsageLabels } from "../utils/usageLabels";
 import {
   MenuTrigger,
@@ -19,8 +25,10 @@ type SidebarBottomRailProps = {
   weeklyResetLabel: string | null;
   creditsLabel: string | null;
   resetCreditsLabel: string | null;
+  resetCredits: RateLimitResetCreditsSnapshot | null;
   showWeekly: boolean;
   onResetUsageLimit: () => void;
+  onLoadResetCreditDetails: () => Promise<void> | void;
   resetUsageDisabled: boolean;
   resettingUsageLimit: boolean;
   onOpenSettings: () => void;
@@ -46,9 +54,86 @@ type UsageRowProps = {
   percent: number | null;
   resetLabel: string | null;
   resetCreditsLabel?: string | null;
+  resetCredits?: RateLimitResetCreditsSnapshot | null;
+  onLoadResetCreditDetails?: () => Promise<void> | void;
 };
 
-function UsageRow({ label, percent, resetLabel, resetCreditsLabel }: UsageRowProps) {
+function formatExpiration(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+  const absolute = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(timestamp));
+  return `${absolute} (${formatRelativeTime(timestamp)})`;
+}
+
+function ResetCreditDetail({ credit }: { credit: RateLimitResetCreditSnapshot }) {
+  const expires = formatExpiration(credit.expiresAt);
+  return (
+    <div className="sidebar-reset-credit-detail">
+      <div className="sidebar-reset-credit-detail-title">
+        {credit.title?.trim() || "Rate limit reset credit"}
+      </div>
+      <div className="sidebar-reset-credit-detail-meta">
+        {expires ? `Expires ${expires}` : "Expiration unavailable"}
+      </div>
+    </div>
+  );
+}
+
+function UsageRow({
+  label,
+  percent,
+  resetLabel,
+  resetCreditsLabel,
+  resetCredits,
+  onLoadResetCreditDetails,
+}: UsageRowProps) {
+  const resetCreditMenu = useMenuController();
+  const {
+    isOpen: resetCreditDetailsOpen,
+    containerRef: resetCreditMenuRef,
+    close: closeResetCreditDetails,
+    open: openResetCreditDetails,
+  } = resetCreditMenu;
+  const [resetCreditDetailsLoading, setResetCreditDetailsLoading] = useState(false);
+  const [resetCreditDetailsRequested, setResetCreditDetailsRequested] = useState(false);
+  const resetCreditDetails = resetCredits?.credits ?? [];
+  const hasResetCredits = Boolean(resetCreditsLabel);
+  const hasResetCreditDetails = resetCreditDetails.length > 0;
+  const availableCount = resetCredits?.availableCount ?? 0;
+
+  useEffect(() => {
+    if (!hasResetCredits) {
+      closeResetCreditDetails();
+    }
+  }, [closeResetCreditDetails, hasResetCredits]);
+
+  useEffect(() => {
+    setResetCreditDetailsRequested(false);
+  }, [availableCount]);
+
+  const handleResetCreditInfoClick = async () => {
+    openResetCreditDetails();
+    if (hasResetCreditDetails || resetCreditDetailsLoading || resetCreditDetailsRequested) {
+      return;
+    }
+    setResetCreditDetailsRequested(true);
+    setResetCreditDetailsLoading(true);
+    try {
+      await onLoadResetCreditDetails?.();
+    } finally {
+      setResetCreditDetailsLoading(false);
+    }
+  };
+
   return (
     <div className="sidebar-usage-row">
       <div className="sidebar-usage-row-head">
@@ -64,7 +149,48 @@ function UsageRow({ label, percent, resetLabel, resetCreditsLabel }: UsageRowPro
         <div className="sidebar-usage-reset-row">
           {resetLabel && <span className="sidebar-usage-reset">{resetLabel}</span>}
           {resetCreditsLabel && (
-            <span className="sidebar-usage-reset-credit">{resetCreditsLabel}</span>
+            <div className="sidebar-reset-credit-menu" ref={resetCreditMenuRef}>
+              <span className="sidebar-usage-reset-credit">{resetCreditsLabel}</span>
+              <MenuTrigger
+                isOpen={resetCreditDetailsOpen}
+                popupRole="dialog"
+                className="ghost sidebar-reset-credit-info"
+                activeClassName="is-open"
+                onClick={handleResetCreditInfoClick}
+                aria-label="Show reset credit details"
+                title="Show reset credit details"
+              >
+                <Info size={10} aria-hidden />
+              </MenuTrigger>
+              {resetCreditDetailsOpen && (
+                <PopoverSurface className="sidebar-reset-credit-popover" role="dialog">
+                  <div className="sidebar-reset-credit-popover-title">
+                    Reset credits
+                  </div>
+                  <div className="sidebar-reset-credit-popover-summary">
+                    {availableCount} available
+                  </div>
+                  {resetCreditDetailsLoading ? (
+                    <div className="sidebar-reset-credit-empty">
+                      Loading reset credits...
+                    </div>
+                  ) : hasResetCreditDetails ? (
+                    <div className="sidebar-reset-credit-detail-list">
+                      {resetCreditDetails.map((credit, index) => (
+                        <ResetCreditDetail
+                          key={credit.id ?? `${credit.expiresAt ?? "credit"}-${index}`}
+                          credit={credit}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="sidebar-reset-credit-empty">
+                      Expiration details unavailable.
+                    </div>
+                  )}
+                </PopoverSurface>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -99,8 +225,10 @@ export function SidebarBottomRail({
   weeklyResetLabel,
   creditsLabel,
   resetCreditsLabel,
+  resetCredits,
   showWeekly,
   onResetUsageLimit,
+  onLoadResetCreditDetails,
   resetUsageDisabled,
   resettingUsageLimit,
   onOpenSettings,
@@ -160,6 +288,8 @@ export function SidebarBottomRail({
             percent={sessionPercent}
             resetLabel={sessionResetLabel}
             resetCreditsLabel={resetCreditsLabel}
+            resetCredits={resetCredits}
+            onLoadResetCreditDetails={onLoadResetCreditDetails}
           />
           {showWeekly && (
             <UsageRow

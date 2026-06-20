@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Clone, Debug)]
@@ -34,6 +35,8 @@ struct SavedAuthProfilesStore {
 
 const AUTH_FILE_NAME: &str = "auth.json";
 const SAVED_AUTH_PROFILES_FILE_NAME: &str = "auth-profiles.json";
+const RATE_LIMIT_RESET_CREDITS_URL: &str =
+    "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits";
 
 pub(crate) fn build_account_response(
     response: Option<Value>,
@@ -155,21 +158,73 @@ pub(crate) fn activate_saved_auth_profile(
         .cloned()
         .ok_or_else(|| "Saved auth profile not found".to_string())?;
 
-    fs::create_dir_all(&codex_home)
-        .map_err(|err| format!("Failed to prepare CODEX_HOME at {}: {err}", codex_home.display()))?;
+    fs::create_dir_all(&codex_home).map_err(|err| {
+        format!(
+            "Failed to prepare CODEX_HOME at {}: {err}",
+            codex_home.display()
+        )
+    })?;
     let auth_path = codex_home.join(AUTH_FILE_NAME);
     let auth_bytes = serde_json::to_vec_pretty(&profile.auth)
         .map_err(|err| format!("Failed to serialize saved auth profile: {err}"))?;
-    fs::write(&auth_path, auth_bytes)
-        .map_err(|err| format!("Failed to activate saved auth profile at {}: {err}", auth_path.display()))?;
+    fs::write(&auth_path, auth_bytes).map_err(|err| {
+        format!(
+            "Failed to activate saved auth profile at {}: {err}",
+            auth_path.display()
+        )
+    })?;
 
     store.active_profile_id = Some(profile.id.clone());
-    if let Some(existing_profile) = store.profiles.iter_mut().find(|entry| entry.id == profile.id) {
+    if let Some(existing_profile) = store
+        .profiles
+        .iter_mut()
+        .find(|entry| entry.id == profile.id)
+    {
         existing_profile.updated_at = current_timestamp_ms();
     }
     save_saved_auth_profiles_store(&codex_home, &store)?;
 
     Ok(saved_auth_profiles_store_to_value(&store))
+}
+
+pub(crate) async fn fetch_rate_limit_reset_credits(codex_home: PathBuf) -> Result<Value, String> {
+    let auth_value = read_auth_value(&codex_home)?;
+    let tokens = auth_value
+        .get("tokens")
+        .and_then(Value::as_object)
+        .ok_or_else(|| "Auth tokens are missing from Codex auth data".to_string())?;
+    let access_token = normalize_string(
+        tokens
+            .get("access_token")
+            .or_else(|| tokens.get("accessToken")),
+    )
+    .ok_or_else(|| "Codex access token is missing".to_string())?;
+    let account_id = normalize_string(tokens.get("account_id").or_else(|| tokens.get("accountId")))
+        .ok_or_else(|| "Codex account id is missing".to_string())?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|err| format!("Failed to prepare reset credits request: {err}"))?;
+    let response = client
+        .get(RATE_LIMIT_RESET_CREDITS_URL)
+        .bearer_auth(access_token)
+        .header("ChatGPT-Account-ID", account_id)
+        .header("originator", "Codex Desktop")
+        .send()
+        .await
+        .map_err(|err| format!("Failed to fetch reset credits: {err}"))?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("Failed to fetch reset credits: HTTP {status}"));
+    }
+    let body = response
+        .text()
+        .await
+        .map_err(|err| format!("Failed to read reset credits response: {err}"))?;
+    let value = serde_json::from_str::<Value>(&body)
+        .map_err(|err| format!("Failed to parse reset credits response: {err}"))?;
+    Ok(sanitize_rate_limit_reset_credits_response(&value))
 }
 
 fn read_auth_account_from_value(auth_value: &Value) -> Option<AuthAccount> {
@@ -236,7 +291,11 @@ fn saved_auth_profiles_store_to_value(store: &SavedAuthProfilesStore) -> Value {
 }
 
 fn upsert_saved_auth_profile(store: &mut SavedAuthProfilesStore, profile: SavedAuthProfile) {
-    if let Some(existing) = store.profiles.iter_mut().find(|entry| entry.id == profile.id) {
+    if let Some(existing) = store
+        .profiles
+        .iter_mut()
+        .find(|entry| entry.id == profile.id)
+    {
         *existing = profile;
         return;
     }
@@ -248,31 +307,102 @@ fn load_saved_auth_profiles_store(codex_home: &Path) -> Result<SavedAuthProfiles
     if !store_path.exists() {
         return Ok(SavedAuthProfilesStore::default());
     }
-    let data = fs::read(&store_path)
-        .map_err(|err| format!("Failed to read saved auth profiles at {}: {err}", store_path.display()))?;
-    serde_json::from_slice(&data)
-        .map_err(|err| format!("Failed to parse saved auth profiles at {}: {err}", store_path.display()))
+    let data = fs::read(&store_path).map_err(|err| {
+        format!(
+            "Failed to read saved auth profiles at {}: {err}",
+            store_path.display()
+        )
+    })?;
+    serde_json::from_slice(&data).map_err(|err| {
+        format!(
+            "Failed to parse saved auth profiles at {}: {err}",
+            store_path.display()
+        )
+    })
 }
 
 fn save_saved_auth_profiles_store(
     codex_home: &Path,
     store: &SavedAuthProfilesStore,
 ) -> Result<(), String> {
-    fs::create_dir_all(codex_home)
-        .map_err(|err| format!("Failed to prepare CODEX_HOME at {}: {err}", codex_home.display()))?;
+    fs::create_dir_all(codex_home).map_err(|err| {
+        format!(
+            "Failed to prepare CODEX_HOME at {}: {err}",
+            codex_home.display()
+        )
+    })?;
     let store_path = codex_home.join(SAVED_AUTH_PROFILES_FILE_NAME);
     let data = serde_json::to_vec_pretty(store)
         .map_err(|err| format!("Failed to serialize saved auth profiles: {err}"))?;
-    fs::write(&store_path, data)
-        .map_err(|err| format!("Failed to write saved auth profiles at {}: {err}", store_path.display()))
+    fs::write(&store_path, data).map_err(|err| {
+        format!(
+            "Failed to write saved auth profiles at {}: {err}",
+            store_path.display()
+        )
+    })
 }
 
 fn read_auth_value(codex_home: &Path) -> Result<Value, String> {
     let auth_path = codex_home.join(AUTH_FILE_NAME);
     let data = fs::read(&auth_path)
         .map_err(|err| format!("Failed to read auth data at {}: {err}", auth_path.display()))?;
-    serde_json::from_slice(&data)
-        .map_err(|err| format!("Failed to parse auth data at {}: {err}", auth_path.display()))
+    serde_json::from_slice(&data).map_err(|err| {
+        format!(
+            "Failed to parse auth data at {}: {err}",
+            auth_path.display()
+        )
+    })
+}
+
+fn sanitize_rate_limit_reset_credits_response(value: &Value) -> Value {
+    let credits = value
+        .get("credits")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| {
+                    let item = item.as_object()?;
+                    let status = normalize_string(item.get("status"));
+                    if matches!(status.as_deref(), Some(value) if !value.eq_ignore_ascii_case("available")) {
+                        return None;
+                    }
+                    Some(json!({
+                        "id": normalize_string(item.get("id")),
+                        "status": status,
+                        "expiresAt": normalize_string(
+                            item.get("expires_at").or_else(|| item.get("expiresAt")),
+                        ),
+                        "grantedAt": normalize_string(
+                            item.get("granted_at").or_else(|| item.get("grantedAt")),
+                        ),
+                        "title": normalize_string(item.get("title")),
+                        "description": normalize_string(item.get("description")),
+                    }))
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let available_count = value
+        .get("available_count")
+        .or_else(|| value.get("availableCount"))
+        .and_then(Value::as_u64)
+        .map(|count| count as usize)
+        .unwrap_or(credits.len());
+    let total_earned_count = value
+        .get("total_earned_count")
+        .or_else(|| value.get("totalEarnedCount"))
+        .and_then(Value::as_u64)
+        .unwrap_or_default();
+
+    json!({
+        "rateLimitResetCredits": {
+            "availableCount": available_count,
+            "credits": credits,
+        },
+        "availableCount": available_count,
+        "totalEarnedCount": total_earned_count,
+    })
 }
 
 fn derive_profile_id(payload: &Value, email: Option<&str>, id_token: &str) -> String {
@@ -291,7 +421,12 @@ fn derive_profile_id(payload: &Value, email: Option<&str>, id_token: &str) -> St
 }
 
 fn normalize_account_type(value: Option<&str>) -> &'static str {
-    match value.unwrap_or_default().trim().to_ascii_lowercase().as_str() {
+    match value
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "chatgpt" => "chatgpt",
         "apikey" => "apikey",
         _ => "unknown",
@@ -449,5 +584,58 @@ mod tests {
         assert_eq!(account.email.as_deref(), Some("user@example.com"));
         assert_eq!(account.plan_type.as_deref(), Some("pro"));
         assert!(account.profile_id.starts_with("profile-"));
+    }
+
+    #[test]
+    fn sanitizes_rate_limit_reset_credit_response() {
+        let response = sanitize_rate_limit_reset_credits_response(&json!({
+            "available_count": 2,
+            "total_earned_count": 4,
+            "credits": [
+                {
+                    "id": "RateLimitResetCredit_1",
+                    "status": "available",
+                    "expires_at": "2026-07-12T03:43:33.910512Z",
+                    "granted_at": "2026-06-12T03:43:33.910512Z",
+                    "profile_image_url": "https://example.test/icon.png",
+                    "profile_user_id": "Codex Team",
+                    "title": "One free rate limit reset",
+                    "description": "Thanks for using Codex!",
+                    "access_token": "secret"
+                },
+                {
+                    "id": "RateLimitResetCredit_2",
+                    "status": "redeemed",
+                    "expires_at": "2026-07-18T03:43:33.910512Z",
+                    "title": "Redeemed reset"
+                }
+            ],
+        }));
+
+        assert_eq!(response["availableCount"], json!(2));
+        assert_eq!(response["totalEarnedCount"], json!(4));
+        let reset_credits = response
+            .get("rateLimitResetCredits")
+            .and_then(Value::as_object)
+            .expect("reset credits");
+        assert_eq!(reset_credits.get("availableCount"), Some(&json!(2)));
+        assert_eq!(
+            reset_credits
+                .get("credits")
+                .and_then(Value::as_array)
+                .cloned(),
+            Some(vec![json!({
+                "id": "RateLimitResetCredit_1",
+                "status": "available",
+                "expiresAt": "2026-07-12T03:43:33.910512Z",
+                "grantedAt": "2026-06-12T03:43:33.910512Z",
+                "title": "One free rate limit reset",
+                "description": "Thanks for using Codex!",
+            })])
+        );
+        let serialized = response.to_string();
+        assert!(!serialized.contains("secret"));
+        assert!(!serialized.contains("profile_image_url"));
+        assert!(!serialized.contains("profile_user_id"));
     }
 }

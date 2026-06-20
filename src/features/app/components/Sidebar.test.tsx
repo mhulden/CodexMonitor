@@ -44,6 +44,7 @@ const baseProps = {
   onActivateSavedProfile: vi.fn(),
   accountSwitching: false,
   onResetUsageLimit: vi.fn(),
+  onLoadResetCreditDetails: vi.fn(),
   resettingUsageLimit: false,
   onOpenSettings: vi.fn(),
   onOpenDebug: vi.fn(),
@@ -182,6 +183,7 @@ describe("Sidebar", () => {
           credits: null,
           rateLimitResetCredits: {
             availableCount: 2,
+            credits: [],
           },
           planType: "pro",
         }}
@@ -195,6 +197,84 @@ describe("Sidebar", () => {
     fireEvent.click(resetButton);
 
     expect(onResetUsageLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens reset credit details and does not refresh when expirations are already loaded", () => {
+    const onLoadResetCreditDetails = vi.fn();
+    render(
+      <Sidebar
+        {...baseProps}
+        activeWorkspaceId="ws-1"
+        accountWorkspaceId="ws-1"
+        resetUsageWorkspaceId="ws-1"
+        onLoadResetCreditDetails={onLoadResetCreditDetails}
+        accountRateLimits={{
+          primary: {
+            usedPercent: 62,
+            windowDurationMins: 300,
+            resetsAt: Math.round(Date.now() / 1000) + 3600,
+          },
+          secondary: null,
+          credits: null,
+          rateLimitResetCredits: {
+            availableCount: 2,
+            credits: [
+              {
+                id: "RateLimitResetCredit_1",
+                status: "available",
+                expiresAt: "2026-07-12T03:43:33.910512Z",
+                grantedAt: "2026-06-12T03:43:33.910512Z",
+                title: "One free rate limit reset",
+                description: "Thanks for using Codex!",
+              },
+            ],
+          },
+          planType: "pro",
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Show reset credit details" }));
+
+    expect(screen.getByText("Reset credits")).toBeTruthy();
+    expect(screen.getByText("One free rate limit reset")).toBeTruthy();
+    expect(screen.getByText(/Expires/).textContent ?? "").toContain("2026");
+    expect(onLoadResetCreditDetails).not.toHaveBeenCalled();
+  });
+
+  it("lazy-loads reset credit details when only the count is known", async () => {
+    const onLoadResetCreditDetails = vi.fn(async () => {});
+    render(
+      <Sidebar
+        {...baseProps}
+        activeWorkspaceId="ws-1"
+        accountWorkspaceId="ws-1"
+        resetUsageWorkspaceId="ws-1"
+        onLoadResetCreditDetails={onLoadResetCreditDetails}
+        accountRateLimits={{
+          primary: {
+            usedPercent: 62,
+            windowDurationMins: 300,
+            resetsAt: Math.round(Date.now() / 1000) + 3600,
+          },
+          secondary: null,
+          credits: null,
+          rateLimitResetCredits: {
+            availableCount: 2,
+            credits: [],
+          },
+          planType: "pro",
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Show reset credit details" }));
+
+    expect(screen.getByText("Loading reset credits...")).toBeTruthy();
+    await waitFor(() => expect(onLoadResetCreditDetails).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      expect(screen.getByText("Expiration details unavailable.")).toBeTruthy();
+    });
   });
 
   it("enables reset credits for the Home account workspace before a chat is active", () => {
@@ -216,6 +296,7 @@ describe("Sidebar", () => {
           credits: null,
           rateLimitResetCredits: {
             availableCount: 2,
+            credits: [],
           },
           planType: "pro",
         }}

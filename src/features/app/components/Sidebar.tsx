@@ -132,6 +132,7 @@ type SidebarProps = {
   onActivateSavedProfile: (profileId: string) => void;
   accountSwitching: boolean;
   onResetUsageLimit: () => void;
+  onLoadResetCreditDetails: () => Promise<void> | void;
   resettingUsageLimit: boolean;
   onOpenSettings: () => void;
   onOpenDebug: () => void;
@@ -202,6 +203,7 @@ export const Sidebar = memo(function Sidebar({
   onActivateSavedProfile,
   accountSwitching,
   onResetUsageLimit,
+  onLoadResetCreditDetails,
   resettingUsageLimit,
   onOpenSettings,
   onOpenDebug,
@@ -1055,8 +1057,10 @@ export const Sidebar = memo(function Sidebar({
         weeklyResetLabel={weeklyResetLabel}
         creditsLabel={creditsLabel}
         resetCreditsLabel={resetCreditsLabel}
+        resetCredits={accountRateLimits?.rateLimitResetCredits ?? null}
         showWeekly={showWeekly}
         onResetUsageLimit={onResetUsageLimit}
+        onLoadResetCreditDetails={onLoadResetCreditDetails}
         resetUsageDisabled={
           resettingUsageLimit ||
           !resetUsageWorkspaceId ||

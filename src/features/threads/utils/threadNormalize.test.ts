@@ -80,6 +80,7 @@ describe("normalizeRateLimits", () => {
       },
       rateLimitResetCredits: {
         availableCount: 2,
+        credits: [],
       },
       planType: "pro",
     } as const;
@@ -111,6 +112,7 @@ describe("normalizeRateLimits", () => {
       },
       rateLimitResetCredits: {
         availableCount: 2,
+        credits: [],
       },
       planType: "pro",
     });
@@ -320,14 +322,83 @@ describe("normalizeRateLimits", () => {
       rateLimitResetCredits: { availableCount: 2 },
     });
 
-    expect(previous.rateLimitResetCredits).toEqual({ availableCount: 2 });
+    expect(previous.rateLimitResetCredits).toEqual({
+      availableCount: 2,
+      credits: [],
+    });
 
     const updated = normalizeRateLimits({ primary: {} }, previous);
-    expect(updated.rateLimitResetCredits).toEqual({ availableCount: 2 });
+    expect(updated.rateLimitResetCredits).toEqual({
+      availableCount: 2,
+      credits: [],
+    });
 
     const snakeCase = normalizeRateLimits({
-      rate_limit_reset_credits: { available_count: "3.9" },
+      rate_limit_reset_credits: {
+        available_count: "3.9",
+        credits: [
+          {
+            id: "RateLimitResetCredit_1",
+            status: "available",
+            expires_at: "2026-07-12T03:43:33.910512Z",
+            granted_at: "2026-06-12T03:43:33.910512Z",
+            title: "One free rate limit reset",
+            description: "Thanks for using Codex!",
+            access_token: "should-not-survive",
+          },
+        ],
+      },
     });
-    expect(snakeCase.rateLimitResetCredits).toEqual({ availableCount: 3 });
+    expect(snakeCase.rateLimitResetCredits).toEqual({
+      availableCount: 3,
+      credits: [
+        {
+          id: "RateLimitResetCredit_1",
+          status: "available",
+          expiresAt: "2026-07-12T03:43:33.910512Z",
+          grantedAt: "2026-06-12T03:43:33.910512Z",
+          title: "One free rate limit reset",
+          description: "Thanks for using Codex!",
+        },
+      ],
+    });
+  });
+
+  it("preserves reset credit details when partial updates only include the count", () => {
+    const previous = normalizeRateLimits({
+      rateLimitResetCredits: {
+        availableCount: 2,
+        credits: [
+          {
+            id: "RateLimitResetCredit_1",
+            status: "available",
+            expiresAt: "2026-07-12T03:43:33.910512Z",
+          },
+        ],
+      },
+    });
+
+    const updated = normalizeRateLimits(
+      {
+        rateLimitResetCredits: {
+          availableCount: 1,
+        },
+      },
+      previous,
+    );
+
+    expect(updated.rateLimitResetCredits).toEqual({
+      availableCount: 1,
+      credits: [
+        {
+          id: "RateLimitResetCredit_1",
+          status: "available",
+          expiresAt: "2026-07-12T03:43:33.910512Z",
+          grantedAt: null,
+          title: null,
+          description: null,
+        },
+      ],
+    });
   });
 });

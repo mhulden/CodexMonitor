@@ -56,6 +56,7 @@ import {
   readAgentConfigToml,
   readImageAsDataUrl,
   generateAgentDescription,
+  getRateLimitResetCredits,
   writeAgentConfigToml,
   writeAgentMd,
 } from "./tauri";
@@ -366,6 +367,17 @@ describe("tauri invoke wrappers", () => {
     expect(invokeMock).toHaveBeenCalledWith("consume_rate_limit_reset_credit", {
       workspaceId: "ws-10",
       idempotencyKey: "key-1",
+    });
+  });
+
+  it("maps workspaceId for account_rate_limit_reset_credits", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await getRateLimitResetCredits("ws-10");
+
+    expect(invokeMock).toHaveBeenCalledWith("account_rate_limit_reset_credits", {
+      workspaceId: "ws-10",
     });
   });
 

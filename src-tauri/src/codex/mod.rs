@@ -508,14 +508,7 @@ pub(crate) async fn start_review(
         .await;
     }
 
-    codex_core::start_review_core(
-        &state.sessions,
-        workspace_id,
-        thread_id,
-        target,
-        delivery,
-    )
-    .await
+    codex_core::start_review_core(&state.sessions, workspace_id, thread_id, target, delivery).await
 }
 
 #[tauri::command]
@@ -751,12 +744,27 @@ pub(crate) async fn consume_rate_limit_reset_credit(
         .await;
     }
 
-    codex_core::consume_rate_limit_reset_credit_core(
-        &state.sessions,
-        workspace_id,
-        idempotency_key,
-    )
-    .await
+    codex_core::consume_rate_limit_reset_credit_core(&state.sessions, workspace_id, idempotency_key)
+        .await
+}
+
+#[tauri::command]
+pub(crate) async fn account_rate_limit_reset_credits(
+    workspace_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "account_rate_limit_reset_credits",
+            json!({ "workspaceId": workspace_id }),
+        )
+        .await;
+    }
+
+    codex_core::account_rate_limit_reset_credits_core(&state.workspaces, workspace_id).await
 }
 
 #[tauri::command]
@@ -823,8 +831,7 @@ pub(crate) async fn saved_auth_profile_activate(
         return Err("Saved auth profiles are not supported in remote mode".to_string());
     }
 
-    codex_core::saved_auth_profile_activate_core(&state.workspaces, workspace_id, profile_id)
-        .await
+    codex_core::saved_auth_profile_activate_core(&state.workspaces, workspace_id, profile_id).await
 }
 
 #[tauri::command]

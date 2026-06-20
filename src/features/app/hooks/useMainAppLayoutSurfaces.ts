@@ -71,6 +71,7 @@ type UseMainAppLayoutSurfacesArgs = {
   onCancelSwitchAccount: SidebarProps["onCancelSwitchAccount"];
   onActivateSavedProfile: SidebarProps["onActivateSavedProfile"];
   onResetUsageLimit: SidebarProps["onResetUsageLimit"];
+  onLoadResetCreditDetails: SidebarProps["onLoadResetCreditDetails"];
   resettingUsageLimit: SidebarProps["resettingUsageLimit"];
   onDecision: LayoutNodesOptions["primary"]["approvalToastsProps"]["onDecision"];
   onRemember: LayoutNodesOptions["primary"]["approvalToastsProps"]["onRemember"];
@@ -285,6 +286,7 @@ function buildPrimarySurface({
   onCancelSwitchAccount,
   onActivateSavedProfile,
   onResetUsageLimit,
+  onLoadResetCreditDetails,
   resettingUsageLimit,
   onDecision,
   onRemember,
@@ -432,6 +434,7 @@ function buildPrimarySurface({
       onActivateSavedProfile,
       accountSwitching,
       onResetUsageLimit,
+      onLoadResetCreditDetails,
       resettingUsageLimit,
       onOpenSettings: sidebarHandlers.onOpenSettings,
       onOpenDebug: handleDebugClick,
@@ -1016,6 +1019,7 @@ export function useMainAppLayoutSurfaces({
   onCancelSwitchAccount,
   onActivateSavedProfile,
   onResetUsageLimit,
+  onLoadResetCreditDetails,
   resettingUsageLimit,
   onDecision,
   onRemember,
@@ -1188,6 +1192,7 @@ export function useMainAppLayoutSurfaces({
     onCancelSwitchAccount,
     onActivateSavedProfile,
     onResetUsageLimit,
+    onLoadResetCreditDetails,
     resettingUsageLimit,
     onDecision,
     onRemember,

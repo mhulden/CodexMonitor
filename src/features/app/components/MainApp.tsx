@@ -1174,6 +1174,13 @@ export default function MainApp() {
     resetUsageWorkspaceId,
     resettingUsageLimit,
   ]);
+  const handleLoadResetCreditDetails = useCallback(async () => {
+    const workspaceId = resetUsageWorkspaceId;
+    if (!workspaceId) {
+      return;
+    }
+    await refreshAccountRateLimits(workspaceId, { includeResetCreditDetails: true });
+  }, [refreshAccountRateLimits, resetUsageWorkspaceId]);
   const handleRestartWorkspaceSession = useCallback(
     async (workspace: WorkspaceInfo) => {
       const confirmed = window.confirm(
@@ -1780,6 +1787,7 @@ export default function MainApp() {
     onCancelSwitchAccount: handleCancelSwitchAccount,
     onActivateSavedProfile: handleActivateSavedProfile,
     onResetUsageLimit: handleResetUsageLimit,
+    onLoadResetCreditDetails: handleLoadResetCreditDetails,
     resettingUsageLimit,
     onDecision: handleApprovalDecision,
     onRemember: handleApprovalRemember,

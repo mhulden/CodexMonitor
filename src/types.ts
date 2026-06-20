@@ -623,6 +623,16 @@ export type CreditsSnapshot = {
 
 export type RateLimitResetCreditsSnapshot = {
   availableCount: number;
+  credits: ReadonlyArray<RateLimitResetCreditSnapshot>;
+};
+
+export type RateLimitResetCreditSnapshot = {
+  id: string | null;
+  status: string | null;
+  expiresAt: string | null;
+  grantedAt: string | null;
+  title: string | null;
+  description: string | null;
 };
 
 export type RateLimitSnapshot = {

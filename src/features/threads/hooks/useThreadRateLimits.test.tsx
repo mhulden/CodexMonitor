@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getAccountRateLimits } from "@services/tauri";
+import { getAccountRateLimits, getRateLimitResetCredits } from "@services/tauri";
 import { normalizeRateLimits } from "@threads/utils/threadNormalize";
 import { useThreadRateLimits } from "./useThreadRateLimits";
 
 vi.mock("@services/tauri", () => ({
   getAccountRateLimits: vi.fn(),
+  getRateLimitResetCredits: vi.fn(),
 }));
 
 describe("useThreadRateLimits", () => {
@@ -125,7 +126,67 @@ describe("useThreadRateLimits", () => {
       workspaceId: "ws-1",
       rateLimits: {
         ...normalizeRateLimits(rawRateLimits),
-        rateLimitResetCredits: { availableCount: 2 },
+        rateLimitResetCredits: { availableCount: 2, credits: [] },
+      },
+    });
+  });
+
+  it("loads reset credit details only when explicitly requested", async () => {
+    const dispatch = vi.fn();
+    const rawRateLimits = {
+      primary: { usedPercent: 10, windowDurationMins: 30, resetsAt: 777 },
+      rateLimitResetCredits: { availableCount: 2 },
+    };
+
+    vi.mocked(getAccountRateLimits).mockResolvedValue({
+      result: { rateLimits: rawRateLimits },
+    });
+    vi.mocked(getRateLimitResetCredits).mockResolvedValue({
+      rateLimitResetCredits: {
+        availableCount: 2,
+        credits: [
+          {
+            id: "RateLimitResetCredit_1",
+            status: "available",
+            expiresAt: "2026-07-12T03:43:33.910512Z",
+            title: "One free rate limit reset",
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useThreadRateLimits({
+        activeWorkspaceId: "ws-1",
+        dispatch,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.refreshAccountRateLimits("ws-1", {
+        includeResetCreditDetails: true,
+      });
+    });
+
+    expect(getRateLimitResetCredits).toHaveBeenCalledWith("ws-1");
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "setRateLimits",
+      workspaceId: "ws-1",
+      rateLimits: {
+        ...normalizeRateLimits(rawRateLimits),
+        rateLimitResetCredits: {
+          availableCount: 2,
+          credits: [
+            {
+              id: "RateLimitResetCredit_1",
+              status: "available",
+              expiresAt: "2026-07-12T03:43:33.910512Z",
+              grantedAt: null,
+              title: "One free rate limit reset",
+              description: null,
+            },
+          ],
+        },
       },
     });
   });

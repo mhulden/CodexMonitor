@@ -1,5 +1,6 @@
 import type {
   CreditsSnapshot,
+  RateLimitResetCreditSnapshot,
   RateLimitResetCreditsSnapshot,
   RateLimitWindow,
   RateLimitSnapshot,
@@ -145,11 +146,31 @@ function normalizeRateLimitResetCreditsSnapshot(
 ): RateLimitResetCreditsSnapshot {
   const rawAvailableCount = source.availableCount ?? source.available_count;
   const parsedAvailableCount = asFiniteNumber(rawAvailableCount);
+  const rawCredits = source.credits;
+  const credits = Array.isArray(rawCredits)
+    ? rawCredits
+        .map((entry): RateLimitResetCreditSnapshot | null => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+            return null;
+          }
+          const record = entry as Record<string, unknown>;
+          return {
+            id: asString(record.id) || null,
+            status: asString(record.status) || null,
+            expiresAt: asString(record.expiresAt ?? record.expires_at) || null,
+            grantedAt: asString(record.grantedAt ?? record.granted_at) || null,
+            title: asString(record.title) || null,
+            description: asString(record.description) || null,
+          };
+        })
+        .filter((entry): entry is RateLimitResetCreditSnapshot => entry !== null)
+    : previousResetCredits?.credits ?? [];
   return {
     availableCount:
       parsedAvailableCount !== null
         ? Math.max(0, Math.floor(parsedAvailableCount))
         : previousResetCredits?.availableCount ?? 0,
+    credits,
   };
 }
 

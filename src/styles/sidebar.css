@@ -1761,6 +1761,88 @@
   text-align: right;
 }
 
+.sidebar-reset-credit-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.sidebar-reset-credit-info {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  min-height: 0;
+  border-radius: 999px;
+  color: var(--text-faint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-reset-credit-info:hover,
+.sidebar-reset-credit-info:focus-visible,
+.sidebar-reset-credit-info.is-open {
+  color: var(--text-stronger);
+  background: var(--surface-hover);
+  transform: none;
+}
+
+.sidebar-reset-credit-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  width: min(260px, calc(100vw - 32px));
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  z-index: 10;
+  text-align: left;
+}
+
+.sidebar-reset-credit-popover-title {
+  color: var(--text-subtle);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-reset-credit-popover-summary {
+  color: var(--text-stronger);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebar-reset-credit-detail-list {
+  display: grid;
+  gap: 6px;
+}
+
+.sidebar-reset-credit-detail {
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-quiet);
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+}
+
+.sidebar-reset-credit-detail-title {
+  color: var(--text-stronger);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.sidebar-reset-credit-detail-meta,
+.sidebar-reset-credit-empty {
+  color: var(--text-subtle);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .sidebar-bottom-actions {
   display: flex;
   flex-direction: row;

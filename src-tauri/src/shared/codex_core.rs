@@ -18,8 +18,8 @@ use crate::codex::config as codex_config;
 use crate::codex::home::{resolve_default_codex_home, resolve_workspace_codex_home};
 use crate::rules;
 use crate::shared::account::{
-    activate_saved_auth_profile, build_account_response, list_saved_auth_profiles, read_auth_account,
-    sync_saved_auth_profile,
+    activate_saved_auth_profile, build_account_response, fetch_rate_limit_reset_credits,
+    list_saved_auth_profiles, read_auth_account, sync_saved_auth_profile,
 };
 use crate::types::WorkspaceEntry;
 
@@ -646,6 +646,14 @@ pub(crate) async fn consume_rate_limit_reset_credit_core(
             json!({ "idempotencyKey": idempotency_key }),
         )
         .await
+}
+
+pub(crate) async fn account_rate_limit_reset_credits_core(
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    workspace_id: String,
+) -> Result<Value, String> {
+    let codex_home = resolve_codex_home_for_workspace_core(workspaces, &workspace_id).await?;
+    fetch_rate_limit_reset_credits(codex_home).await
 }
 
 pub(crate) async fn account_read_core(

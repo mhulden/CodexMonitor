@@ -275,6 +275,7 @@ pub fn run() {
             codex::write_agent_config_toml,
             codex::account_rate_limits,
             codex::consume_rate_limit_reset_credit,
+            codex::account_rate_limit_reset_credits,
             codex::account_read,
             codex::saved_auth_profiles_list,
             codex::saved_auth_profile_sync_current,

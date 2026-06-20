@@ -407,6 +407,13 @@ pub(super) async fn try_handle(
                     .await,
             )
         }
+        "account_rate_limit_reset_credits" => {
+            let workspace_id = match parse_string(params, "workspaceId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            Some(state.account_rate_limit_reset_credits(workspace_id).await)
+        }
         "account_read" => {
             let workspace_id = match parse_string(params, "workspaceId") {
                 Ok(value) => value,
