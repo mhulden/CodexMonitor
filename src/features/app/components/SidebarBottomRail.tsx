@@ -29,6 +29,7 @@ type SidebarBottomRailProps = {
   showWeekly: boolean;
   onResetUsageLimit: () => void;
   onLoadResetCreditDetails: () => Promise<void> | void;
+  resetCreditDetailsUnavailableMessage?: string;
   resetUsageDisabled: boolean;
   resettingUsageLimit: boolean;
   onOpenSettings: () => void;
@@ -56,6 +57,7 @@ type UsageRowProps = {
   resetCreditsLabel?: string | null;
   resetCredits?: RateLimitResetCreditsSnapshot | null;
   onLoadResetCreditDetails?: () => Promise<void> | void;
+  resetCreditDetailsUnavailableMessage?: string;
 };
 
 function formatExpiration(value: string | null): string | null {
@@ -95,6 +97,7 @@ function UsageRow({
   resetCreditsLabel,
   resetCredits,
   onLoadResetCreditDetails,
+  resetCreditDetailsUnavailableMessage = "Expiration details unavailable.",
 }: UsageRowProps) {
   const resetCreditMenu = useMenuController();
   const {
@@ -185,7 +188,7 @@ function UsageRow({
                     </div>
                   ) : (
                     <div className="sidebar-reset-credit-empty">
-                      Expiration details unavailable.
+                      {resetCreditDetailsUnavailableMessage}
                     </div>
                   )}
                 </PopoverSurface>
@@ -229,6 +232,7 @@ export function SidebarBottomRail({
   showWeekly,
   onResetUsageLimit,
   onLoadResetCreditDetails,
+  resetCreditDetailsUnavailableMessage,
   resetUsageDisabled,
   resettingUsageLimit,
   onOpenSettings,
@@ -274,6 +278,7 @@ export function SidebarBottomRail({
     () => savedProfiles.filter((profile) => !profile.isActive),
     [savedProfiles],
   );
+  const showResetCreditsOnWeekly = showWeekly;
 
   return (
     <div className="sidebar-bottom-rail">
@@ -287,15 +292,26 @@ export function SidebarBottomRail({
             label="Session"
             percent={sessionPercent}
             resetLabel={sessionResetLabel}
-            resetCreditsLabel={resetCreditsLabel}
-            resetCredits={resetCredits}
-            onLoadResetCreditDetails={onLoadResetCreditDetails}
+            resetCreditsLabel={showResetCreditsOnWeekly ? null : resetCreditsLabel}
+            resetCredits={showResetCreditsOnWeekly ? null : resetCredits}
+            onLoadResetCreditDetails={
+              showResetCreditsOnWeekly ? undefined : onLoadResetCreditDetails
+            }
+            resetCreditDetailsUnavailableMessage={
+              showResetCreditsOnWeekly
+                ? undefined
+                : resetCreditDetailsUnavailableMessage
+            }
           />
           {showWeekly && (
             <UsageRow
               label="Weekly"
               percent={weeklyPercent}
               resetLabel={weeklyResetLabel}
+              resetCreditsLabel={resetCreditsLabel}
+              resetCredits={resetCredits}
+              onLoadResetCreditDetails={onLoadResetCreditDetails}
+              resetCreditDetailsUnavailableMessage={resetCreditDetailsUnavailableMessage}
             />
           )}
         </div>

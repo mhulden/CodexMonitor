@@ -133,6 +133,7 @@ type SidebarProps = {
   accountSwitching: boolean;
   onResetUsageLimit: () => void;
   onLoadResetCreditDetails: () => Promise<void> | void;
+  resetCreditDetailsUnavailableMessage?: string;
   resettingUsageLimit: boolean;
   onOpenSettings: () => void;
   onOpenDebug: () => void;
@@ -204,6 +205,7 @@ export const Sidebar = memo(function Sidebar({
   accountSwitching,
   onResetUsageLimit,
   onLoadResetCreditDetails,
+  resetCreditDetailsUnavailableMessage,
   resettingUsageLimit,
   onOpenSettings,
   onOpenDebug,
@@ -1061,6 +1063,7 @@ export const Sidebar = memo(function Sidebar({
         showWeekly={showWeekly}
         onResetUsageLimit={onResetUsageLimit}
         onLoadResetCreditDetails={onLoadResetCreditDetails}
+        resetCreditDetailsUnavailableMessage={resetCreditDetailsUnavailableMessage}
         resetUsageDisabled={
           resettingUsageLimit ||
           !resetUsageWorkspaceId ||

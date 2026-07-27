@@ -199,6 +199,42 @@ describe("Sidebar", () => {
     expect(onResetUsageLimit).toHaveBeenCalledTimes(1);
   });
 
+  it("places reset credits under weekly usage when weekly limits are shown", () => {
+    const { container } = render(
+      <Sidebar
+        {...baseProps}
+        activeWorkspaceId="ws-1"
+        accountWorkspaceId="ws-1"
+        resetUsageWorkspaceId="ws-1"
+        accountRateLimits={{
+          primary: {
+            usedPercent: 62,
+            windowDurationMins: 300,
+            resetsAt: Math.round(Date.now() / 1000) + 3600,
+          },
+          secondary: {
+            usedPercent: 31,
+            windowDurationMins: 10080,
+            resetsAt: Math.round(Date.now() / 1000) + 7 * 24 * 3600,
+          },
+          credits: null,
+          rateLimitResetCredits: {
+            availableCount: 2,
+            credits: [],
+          },
+          planType: "pro",
+        }}
+      />,
+    );
+
+    const rows = Array.from(container.querySelectorAll(".sidebar-usage-row"));
+    const sessionRow = rows.find((row) => row.textContent?.includes("Session"));
+    const weeklyRow = rows.find((row) => row.textContent?.includes("Weekly"));
+
+    expect(sessionRow?.textContent ?? "").not.toContain("2 resets");
+    expect(weeklyRow?.textContent ?? "").toContain("2 resets");
+  });
+
   it("opens reset credit details and does not refresh when expirations are already loaded", () => {
     const onLoadResetCreditDetails = vi.fn();
     render(
@@ -244,6 +280,8 @@ describe("Sidebar", () => {
 
   it("lazy-loads reset credit details when only the count is known", async () => {
     const onLoadResetCreditDetails = vi.fn(async () => {});
+    const unavailableMessage =
+      "Expiration details unavailable. In remote mode, update the daemon if needed, then ensure it can read Codex auth and reach ChatGPT.";
     render(
       <Sidebar
         {...baseProps}
@@ -251,6 +289,7 @@ describe("Sidebar", () => {
         accountWorkspaceId="ws-1"
         resetUsageWorkspaceId="ws-1"
         onLoadResetCreditDetails={onLoadResetCreditDetails}
+        resetCreditDetailsUnavailableMessage={unavailableMessage}
         accountRateLimits={{
           primary: {
             usedPercent: 62,
@@ -273,7 +312,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("Loading reset credits...")).toBeTruthy();
     await waitFor(() => expect(onLoadResetCreditDetails).toHaveBeenCalledTimes(1));
     await waitFor(() => {
-      expect(screen.getByText("Expiration details unavailable.")).toBeTruthy();
+      expect(screen.getByText(unavailableMessage)).toBeTruthy();
     });
   });
 

@@ -20,6 +20,7 @@ type UseMainAppLayoutSurfacesArgs = {
   appSettings: Pick<
     AppSettings,
     | "usageShowRemaining"
+    | "backendMode"
     | "composerCodeBlockCopyUseModifier"
     | "showMessageFilePath"
     | "mathRenderingEnabled"
@@ -435,6 +436,10 @@ function buildPrimarySurface({
       accountSwitching,
       onResetUsageLimit,
       onLoadResetCreditDetails,
+      resetCreditDetailsUnavailableMessage:
+        appSettings.backendMode === "remote"
+          ? "Expiration details unavailable. In remote mode, update the daemon if needed, then ensure it can read Codex auth and reach ChatGPT."
+          : undefined,
       resettingUsageLimit,
       onOpenSettings: sidebarHandlers.onOpenSettings,
       onOpenDebug: handleDebugClick,

@@ -1734,6 +1734,7 @@ export default function MainApp() {
   const layoutSurfaces = useMainAppLayoutSurfaces({
     appSettings: {
       usageShowRemaining: appSettings.usageShowRemaining,
+      backendMode: appSettings.backendMode,
       composerCodeBlockCopyUseModifier:
         appSettings.composerCodeBlockCopyUseModifier,
       showMessageFilePath: appSettings.showMessageFilePath,
