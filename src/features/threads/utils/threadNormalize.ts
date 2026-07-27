@@ -41,6 +41,26 @@ function asFiniteNumber(value: unknown): number | null {
   return null;
 }
 
+function asTimestampString(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric) && /^\d+(?:\.\d+)?$/.test(trimmed)) {
+      const timestampMs = numeric < 10_000_000_000 ? numeric * 1000 : numeric;
+      return new Date(timestampMs).toISOString();
+    }
+    return trimmed;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const timestampMs = value < 10_000_000_000 ? value * 1000 : value;
+    return new Date(timestampMs).toISOString();
+  }
+  return null;
+}
+
 function clampPercent(value: number): number {
   return Math.min(Math.max(value, 0), 100);
 }
@@ -157,8 +177,8 @@ function normalizeRateLimitResetCreditsSnapshot(
           return {
             id: asString(record.id) || null,
             status: asString(record.status) || null,
-            expiresAt: asString(record.expiresAt ?? record.expires_at) || null,
-            grantedAt: asString(record.grantedAt ?? record.granted_at) || null,
+            expiresAt: asTimestampString(record.expiresAt ?? record.expires_at),
+            grantedAt: asTimestampString(record.grantedAt ?? record.granted_at),
             title: asString(record.title) || null,
             description: asString(record.description) || null,
           };

@@ -362,6 +362,29 @@ describe("normalizeRateLimits", () => {
         },
       ],
     });
+
+    const appServerTimestamps = normalizeRateLimits({
+      rateLimitResetCredits: {
+        availableCount: 2,
+        credits: [
+          {
+            id: "RateLimitResetCredit_1",
+            status: "available",
+            expiresAt: 1_785_528_367,
+            grantedAt: "1782936367",
+            title: "Full reset",
+          },
+        ],
+      },
+    });
+    expect(appServerTimestamps.rateLimitResetCredits?.credits[0]).toEqual({
+      id: "RateLimitResetCredit_1",
+      status: "available",
+      expiresAt: "2026-07-31T20:06:07.000Z",
+      grantedAt: "2026-07-01T20:06:07.000Z",
+      title: "Full reset",
+      description: null,
+    });
   });
 
   it("preserves reset credit details when partial updates only include the count", () => {
