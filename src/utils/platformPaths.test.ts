@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMobilePlatform } from "./platformPaths";
+import { isLinuxPlatform, isMobilePlatform } from "./platformPaths";
 
 const globalScope = globalThis as typeof globalThis & { navigator?: Navigator };
 
@@ -96,6 +96,32 @@ describe("isMobilePlatform", () => {
       },
       () => {
         expect(isMobilePlatform()).toBe(true);
+      },
+    );
+  });
+});
+
+describe("isLinuxPlatform", () => {
+  it("returns true for Linux desktop platforms", () => {
+    withNavigatorValues(
+      {
+        platform: "Linux x86_64",
+        userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+      },
+      () => {
+        expect(isLinuxPlatform()).toBe(true);
+      },
+    );
+  });
+
+  it("returns false for non-Linux platforms", () => {
+    withNavigatorValues(
+      {
+        platform: "Win32",
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+      () => {
+        expect(isLinuxPlatform()).toBe(false);
       },
     );
   });

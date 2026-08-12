@@ -99,9 +99,9 @@ body {
   pointer-events: var(--window-drag-strip-pointer-events, auto);
 }
 
-.app.is-windows [data-tauri-drag-region],
-.app.is-windows .titlebar,
-.app.is-windows .main-topbar {
+.app.uses-custom-window-chrome [data-tauri-drag-region],
+.app.uses-custom-window-chrome .titlebar,
+.app.uses-custom-window-chrome .main-topbar {
   -webkit-app-region: no-drag !important;
 }
 
