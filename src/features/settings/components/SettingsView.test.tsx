@@ -112,6 +112,7 @@ const baseSettings: AppSettings = {
   usageShowRemaining: false,
   showMessageFilePath: true,
   mathRenderingEnabled: false,
+  privacyAliasRevealEnabled: true,
   chatHistoryScrollbackItems: 200,
   threadTitleAutogenerationEnabled: false,
   automaticAppUpdateChecksEnabled: true,

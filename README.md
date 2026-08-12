@@ -25,6 +25,7 @@ CodexMonitor is a Tauri app for orchestrating multiple Codex agents across local
 - Model picker, collaboration modes (when enabled), reasoning effort, access mode, and context usage ring.
 - Dictation with hold-to-talk shortcuts and live waveform (Whisper).
 - Render reasoning/tool/diff items and handle approval prompts.
+- Privacy aliases: mark sensitive names/labels with `@p{...}` or `@private{...}` before sending, reveal aliases locally, and use the standalone `codexmonitor_privacy` file tool.
 
 ### Git & GitHub
 
@@ -75,6 +76,30 @@ Run in dev mode:
 ```bash
 npm run tauri:dev
 ```
+
+## Privacy Aliases
+
+CodexMonitor can anonymize explicitly marked sensitive text before it reaches
+Codex:
+
+```text
+@p{John Smith} got 9.0 on HW3.
+```
+
+The model receives a `P1_...` alias instead of the plaintext. The local UI can
+reveal aliases back to the user when `Settings > Display & Chat > Reveal privacy
+aliases locally` is enabled.
+
+Release builds also include `codexmonitor_privacy` for offline file
+anonymization/reveal:
+
+```bash
+codexmonitor_privacy anonymize grades.md > grades.private.md
+codexmonitor_privacy reveal grades.private.md > grades.revealed.md
+```
+
+See `docs/privacy-aliases.md` for behavior, limitations, remote-backend notes,
+and implementation pointers.
 
 ## iOS Support (WIP)
 
@@ -262,6 +287,7 @@ cd src-tauri && cargo check
 For task-oriented file lookup ("if you need X, edit Y"), use:
 
 - `docs/codebase-map.md`
+- `docs/privacy-aliases.md` for privacy alias behavior and implementation notes
 
 ## Project Structure
 

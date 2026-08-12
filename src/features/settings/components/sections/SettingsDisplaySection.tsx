@@ -264,6 +264,20 @@ export function SettingsDisplaySection({
         />
       </SettingsToggleRow>
       <SettingsToggleRow
+        title="Reveal privacy aliases locally"
+        subtitle="Show P1_ privacy aliases as their original text on this device after you enter the session passphrase."
+      >
+        <SettingsToggleSwitch
+          pressed={appSettings.privacyAliasRevealEnabled}
+          onClick={() =>
+            void onUpdateAppSettings({
+              ...appSettings,
+              privacyAliasRevealEnabled: !appSettings.privacyAliasRevealEnabled,
+            })
+          }
+        />
+      </SettingsToggleRow>
+      <SettingsToggleRow
         title="Unlimited chat history"
         subtitle="Keep full thread history in memory (may impact performance)."
       >

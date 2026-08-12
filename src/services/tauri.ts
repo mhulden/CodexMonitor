@@ -154,6 +154,12 @@ export type SetAgentsCoreInput = {
   maxDepth: number;
 };
 
+export type PrivacyAliasTransform = {
+  text: string;
+  changed: boolean;
+  replacements: number;
+};
+
 export type CreateAgentInput = {
   name: string;
   description?: string | null;
@@ -198,6 +204,34 @@ async function fileWrite(
 
 export async function readImageAsDataUrl(path: string): Promise<string> {
   return invoke<string>("read_image_as_data_url", { path });
+}
+
+export async function privacyAliasAnonymizeText(
+  text: string,
+  passphrase: string,
+): Promise<PrivacyAliasTransform> {
+  return invoke<PrivacyAliasTransform>("privacy_alias_anonymize_text", {
+    text,
+    passphrase,
+  });
+}
+
+export async function privacyAliasRevealText(
+  text: string,
+  passphrase: string,
+): Promise<PrivacyAliasTransform> {
+  return invoke<PrivacyAliasTransform>("privacy_alias_reveal_text", {
+    text,
+    passphrase,
+  });
+}
+
+export async function privacyAliasContainsMarkers(text: string): Promise<boolean> {
+  return invoke<boolean>("privacy_alias_contains_markers", { text });
+}
+
+export async function privacyAliasContainsAliases(text: string): Promise<boolean> {
+  return invoke<boolean>("privacy_alias_contains_aliases", { text });
 }
 
 export async function readGlobalAgentsMd(): Promise<GlobalAgentsResponse> {

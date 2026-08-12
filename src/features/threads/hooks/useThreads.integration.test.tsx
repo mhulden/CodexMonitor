@@ -46,6 +46,18 @@ vi.mock("@services/tauri", () => ({
   getAccountRateLimits: vi.fn(),
   getAccountInfo: vi.fn(),
   interruptTurn: vi.fn(),
+  privacyAliasContainsMarkers: vi.fn(async () => false),
+  privacyAliasAnonymizeText: vi.fn(async (text: string) => ({
+    text,
+    changed: false,
+    replacements: 0,
+  })),
+  privacyAliasRevealText: vi.fn(async (text: string) => ({
+    text,
+    changed: false,
+    replacements: 0,
+  })),
+  privacyAliasContainsAliases: vi.fn(async () => false),
 }));
 
 const workspace: WorkspaceInfo = {

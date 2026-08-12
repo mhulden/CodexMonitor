@@ -15,6 +15,7 @@ import {
   toFileLink,
 } from "../utils/messageFileLinks";
 import { normalizeBackslashMathDelimiters } from "../utils/backslashMathScanner";
+import { revealPrivateAliasesForDisplay } from "@/features/privacy/privacyAliases";
 import type { ParsedFileLocation } from "../../../utils/fileLinks";
 
 type MarkdownProps = {
@@ -24,6 +25,7 @@ type MarkdownProps = {
   codeBlockStyle?: "default" | "message";
   codeBlockCopyUseModifier?: boolean;
   enableMathRendering?: boolean;
+  revealPrivacyAliases?: boolean;
   showFilePath?: boolean;
   workspacePath?: string | null;
   onOpenFileLink?: (path: ParsedFileLocation) => void;
@@ -439,13 +441,34 @@ export function Markdown({
   codeBlockStyle = "default",
   codeBlockCopyUseModifier = false,
   enableMathRendering = false,
+  revealPrivacyAliases = true,
   showFilePath = true,
   workspacePath = null,
   onOpenFileLink,
   onOpenFileLinkMenu,
   onOpenThreadLink,
 }: MarkdownProps) {
-  const markdownValue = codeBlock ? value : normalizeListIndentation(value);
+  const [displayValue, setDisplayValue] = useState(value);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDisplayValue(value);
+    if (codeBlock || !revealPrivacyAliases) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    void revealPrivateAliasesForDisplay(value).then((result) => {
+      if (!cancelled) {
+        setDisplayValue(result.text);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [codeBlock, revealPrivacyAliases, value]);
+
+  const markdownValue = codeBlock ? displayValue : normalizeListIndentation(displayValue);
   const mathNormalizedValue = !codeBlock && enableMathRendering
     ? normalizeBackslashMathDelimiters(markdownValue)
     : markdownValue;

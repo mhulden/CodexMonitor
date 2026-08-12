@@ -1739,6 +1739,7 @@ export default function MainApp() {
         appSettings.composerCodeBlockCopyUseModifier,
       showMessageFilePath: appSettings.showMessageFilePath,
       mathRenderingEnabled: appSettings.mathRenderingEnabled,
+      privacyAliasRevealEnabled: appSettings.privacyAliasRevealEnabled,
       openAppTargets: appSettings.openAppTargets,
       selectedOpenAppId: appSettings.selectedOpenAppId,
       experimentalAppsEnabled: appSettings.experimentalAppsEnabled,

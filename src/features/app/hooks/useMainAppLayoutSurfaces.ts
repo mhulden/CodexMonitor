@@ -24,6 +24,7 @@ type UseMainAppLayoutSurfacesArgs = {
     | "composerCodeBlockCopyUseModifier"
     | "showMessageFilePath"
     | "mathRenderingEnabled"
+    | "privacyAliasRevealEnabled"
     | "openAppTargets"
     | "selectedOpenAppId"
     | "experimentalAppsEnabled"
@@ -483,6 +484,7 @@ function buildPrimarySurface({
       selectedOpenAppId: appSettings.selectedOpenAppId,
       codeBlockCopyUseModifier: appSettings.composerCodeBlockCopyUseModifier,
       enableMathRendering: appSettings.mathRenderingEnabled,
+      revealPrivacyAliases: appSettings.privacyAliasRevealEnabled,
       showMessageFilePath: appSettings.showMessageFilePath,
       userInputRequests,
       onUserInputSubmit,

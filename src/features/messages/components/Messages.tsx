@@ -38,6 +38,7 @@ type MessagesProps = {
   selectedOpenAppId: string;
   codeBlockCopyUseModifier?: boolean;
   enableMathRendering?: boolean;
+  revealPrivacyAliases?: boolean;
   showMessageFilePath?: boolean;
   userInputRequests?: RequestUserInputRequest[];
   onUserInputSubmit?: (
@@ -65,6 +66,7 @@ export const Messages = memo(function Messages({
   selectedOpenAppId,
   codeBlockCopyUseModifier = false,
   enableMathRendering = false,
+  revealPrivacyAliases = true,
   showMessageFilePath = true,
   userInputRequests = [],
   onUserInputSubmit,
@@ -158,6 +160,7 @@ export const Messages = memo(function Messages({
           onQuote={onQuoteMessage ? handleQuoteMessage : undefined}
           codeBlockCopyUseModifier={codeBlockCopyUseModifier}
           enableMathRendering={enableMathRendering}
+          revealPrivacyAliases={revealPrivacyAliases}
           showMessageFilePath={showMessageFilePath}
           workspacePath={workspacePath}
           onOpenFileLink={openFileLink}
@@ -177,6 +180,7 @@ export const Messages = memo(function Messages({
           isExpanded={isExpanded}
           onToggle={toggleExpanded}
           enableMathRendering={enableMathRendering}
+          revealPrivacyAliases={revealPrivacyAliases}
           showMessageFilePath={showMessageFilePath}
           workspacePath={workspacePath}
           onOpenFileLink={openFileLink}
@@ -191,6 +195,7 @@ export const Messages = memo(function Messages({
           key={item.id}
           item={item}
           enableMathRendering={enableMathRendering}
+          revealPrivacyAliases={revealPrivacyAliases}
           showMessageFilePath={showMessageFilePath}
           workspacePath={workspacePath}
           onOpenFileLink={openFileLink}
@@ -222,6 +227,7 @@ export const Messages = memo(function Messages({
           isExpanded={isExpanded}
           onToggle={toggleExpanded}
           enableMathRendering={enableMathRendering}
+          revealPrivacyAliases={revealPrivacyAliases}
           showMessageFilePath={showMessageFilePath}
           workspacePath={workspacePath}
           onOpenFileLink={openFileLink}

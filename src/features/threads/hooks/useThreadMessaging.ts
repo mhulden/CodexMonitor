@@ -21,6 +21,7 @@ import {
   getAppsList as getAppsListService,
   listMcpServerStatus as listMcpServerStatusService,
 } from "@services/tauri";
+import { anonymizePrivateTextForSend } from "@/features/privacy/privacyAliases";
 import { expandCustomPromptText } from "@utils/customPrompts";
 import {
   asString,
@@ -178,12 +179,35 @@ export function useThreadMessaging({
           activeTurnId,
         },
       });
+      let outboundText = finalText;
+      try {
+        const privacyTransform = await anonymizePrivateTextForSend(finalText);
+        outboundText = privacyTransform.text;
+        if (privacyTransform.changed) {
+          onDebug?.({
+            id: `${Date.now()}-client-privacy-anonymize`,
+            timestamp: Date.now(),
+            source: "client",
+            label: "privacy/anonymize",
+            payload: {
+              workspaceId: workspace.id,
+              threadId,
+              replacements: privacyTransform.replacements,
+            },
+          });
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        pushThreadErrorMessage(threadId, errorMessage);
+        safeMessageActivity();
+        return { status: "blocked" };
+      }
       Sentry.metrics.count("prompt_sent", 1, {
         attributes: {
           workspace_id: workspace.id,
           thread_id: threadId,
           has_images: images.length > 0 ? "true" : "false",
-          text_length: String(finalText.length),
+          text_length: String(outboundText.length),
           model: resolvedModel ?? "unknown",
           effort: resolvedEffort ?? "unknown",
           service_tier: resolvedServiceTier ?? "default",
@@ -211,7 +235,7 @@ export function useThreadMessaging({
           workspaceId: workspace.id,
           threadId,
           turnId: activeTurnId,
-          text: finalText,
+          text: outboundText,
           images,
           model: resolvedModel,
           effort: resolvedEffort,
@@ -237,7 +261,7 @@ export function useThreadMessaging({
               workspace.id,
               threadId,
               activeTurnId ?? "",
-              finalText,
+              outboundText,
               images,
               appMentions,
             )
@@ -245,13 +269,13 @@ export function useThreadMessaging({
               workspace.id,
               threadId,
               activeTurnId ?? "",
-              finalText,
+              outboundText,
               images,
             ))) as Record<string, unknown>
           : (await sendUserMessageService(
             workspace.id,
             threadId,
-            finalText,
+            outboundText,
             buildTurnStartPayload({
               model: resolvedModel,
               effort: resolvedEffort,

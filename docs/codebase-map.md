@@ -5,6 +5,7 @@ Canonical navigation guide for CodexMonitor. Use this as: "if you need X, edit Y
 Related docs:
 
 - Setup/build/release: `README.md`
+- Privacy alias user and implementation notes: `docs/privacy-aliases.md`
 - iOS remote over Tailscale (TCP): `docs/mobile-ios-tailscale-blueprint.md`
 
 ## Start Here: How Changes Flow
@@ -35,6 +36,7 @@ If a behavior must work in both app and daemon, implement it in `src-tauri/src/s
 | Change Git/GitHub backend behavior | `src/features/git/hooks/*`, `src/services/tauri.ts`, `src-tauri/src/git/mod.rs`, `src-tauri/src/shared/git_ui_core.rs`, `src-tauri/src/shared/git_ui_core/*`, `src-tauri/src/shared/git_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc/git.rs` |
 | Change prompts CRUD/listing behavior | `src/features/prompts/hooks/useCustomPrompts.ts`, `src/features/prompts/components/PromptPanel.tsx`, `src/services/tauri.ts`, `src-tauri/src/prompts.rs`, `src-tauri/src/shared/prompts_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` |
 | Change file read/write for Agents/config | `src/services/tauri.ts`, `src-tauri/src/files/mod.rs`, `src-tauri/src/shared/files_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` |
+| Change privacy alias anonymize/reveal behavior | `src/features/privacy/privacyAliases.ts`, `src/features/threads/hooks/useThreadMessaging.ts`, `src/features/messages/components/Markdown.tsx`, `src/services/tauri.ts`, `src-tauri/src/privacy.rs`, `src-tauri/src/shared/privacy_alias_core.rs`, `src-tauri/src/bin/codexmonitor_privacy.rs` |
 | Add/change daemon JSON-RPC surface | `src-tauri/src/bin/codex_monitor_daemon/rpc.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc/*`, `src-tauri/src/bin/codex_monitor_daemon.rs`, matching shared core |
 
 ## Frontend Navigation
@@ -90,6 +92,13 @@ Use TS/Vite aliases for refactor-safe imports:
 
 - Prompt UI and workflow: `src/features/prompts/components/PromptPanel.tsx`, `src/features/prompts/hooks/useCustomPrompts.ts`
 
+### Privacy Aliases
+
+- Frontend session passphrase and transform helpers: `src/features/privacy/privacyAliases.ts`
+- Send-path anonymization: `src/features/threads/hooks/useThreadMessaging.ts`
+- Display-path local reveal: `src/features/messages/components/Markdown.tsx`
+- Display setting: `src/features/settings/components/sections/SettingsDisplaySection.tsx`, `src/features/settings/hooks/useAppSettings.ts`, `src/types.ts`, `src-tauri/src/types.rs`
+
 ## Backend App (Tauri) Navigation
 
 - Command registry (what frontend can invoke): `src-tauri/src/lib.rs`
@@ -99,6 +108,7 @@ Use TS/Vite aliases for refactor-safe imports:
 - Settings adapters: `src-tauri/src/settings/mod.rs`
 - Prompts adapters: `src-tauri/src/prompts.rs`
 - File adapters: `src-tauri/src/files/mod.rs`
+- Privacy alias command adapter: `src-tauri/src/privacy.rs`
 - Event emission implementation: `src-tauri/src/event_sink.rs`
 - Event payload definitions: `src-tauri/src/backend/events.rs`
 
@@ -126,6 +136,7 @@ All cross-runtime domain behavior belongs in `src-tauri/src/shared/*`:
 - Prompts CRUD/listing: `src-tauri/src/shared/prompts_core.rs`
 - Usage snapshot and aggregation: `src-tauri/src/shared/local_usage_core.rs`
 - Process helpers: `src-tauri/src/shared/process_core.rs`
+- Privacy alias anonymize/reveal core: `src-tauri/src/shared/privacy_alias_core.rs`
 
 ## Events Map (Backend -> Frontend)
 

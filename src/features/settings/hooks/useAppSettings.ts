@@ -170,6 +170,7 @@ function buildDefaultSettings(): AppSettings {
     usageShowRemaining: false,
     showMessageFilePath: true,
     mathRenderingEnabled: true,
+    privacyAliasRevealEnabled: true,
     chatHistoryScrollbackItems: CHAT_SCROLLBACK_DEFAULT,
     threadTitleAutogenerationEnabled: false,
     automaticAppUpdateChecksEnabled: true,
@@ -276,6 +277,10 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     mathRenderingEnabled:
       typeof settings.mathRenderingEnabled === "boolean"
         ? settings.mathRenderingEnabled
+        : true,
+    privacyAliasRevealEnabled:
+      typeof settings.privacyAliasRevealEnabled === "boolean"
+        ? settings.privacyAliasRevealEnabled
         : true,
     chatHistoryScrollbackItems,
     commitMessagePrompt,

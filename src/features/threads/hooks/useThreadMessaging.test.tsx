@@ -10,6 +10,8 @@ import {
   getAppsList as getAppsListService,
   listMcpServerStatus as listMcpServerStatusService,
   compactThread as compactThreadService,
+  privacyAliasContainsMarkers,
+  privacyAliasAnonymizeText,
 } from "@services/tauri";
 import type { WorkspaceInfo } from "@/types";
 import { useThreadMessaging } from "./useThreadMessaging";
@@ -28,6 +30,10 @@ vi.mock("@services/tauri", () => ({
   getAppsList: vi.fn(),
   listMcpServerStatus: vi.fn(),
   compactThread: vi.fn(),
+  privacyAliasContainsMarkers: vi.fn(),
+  privacyAliasAnonymizeText: vi.fn(),
+  privacyAliasRevealText: vi.fn(),
+  privacyAliasContainsAliases: vi.fn(),
 }));
 
 vi.mock("./useReviewPrompt", () => ({
@@ -95,6 +101,12 @@ describe("useThreadMessaging telemetry", () => {
     vi.mocked(compactThreadService).mockResolvedValue(
       {} as Awaited<ReturnType<typeof compactThreadService>>,
     );
+    vi.mocked(privacyAliasContainsMarkers).mockResolvedValue(false);
+    vi.mocked(privacyAliasAnonymizeText).mockImplementation(async (text) => ({
+      text,
+      changed: false,
+      replacements: 0,
+    }));
   });
 
   it("records prompt_sent once for one message send", async () => {
@@ -156,6 +168,77 @@ describe("useThreadMessaging telemetry", () => {
     );
     expect(ensureWorkspaceRuntimeCodexArgs).toHaveBeenCalledTimes(1);
     expect(ensureWorkspaceRuntimeCodexArgs).toHaveBeenCalledWith("ws-1", "thread-1");
+  });
+
+  it("anonymizes private markers before debug logging and turn/start", async () => {
+    vi.mocked(privacyAliasContainsMarkers).mockResolvedValue(true);
+    vi.mocked(privacyAliasAnonymizeText).mockResolvedValue({
+      text: "P1_alias got 9.0",
+      changed: true,
+      replacements: 1,
+    });
+    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("secret");
+    const onDebug = vi.fn();
+    const { result } = renderHook(() =>
+      useThreadMessaging({
+        activeWorkspace: workspace,
+        activeThreadId: "thread-1",
+        accessMode: "current",
+        model: null,
+        effort: null,
+        collaborationMode: null,
+        reviewDeliveryMode: "inline",
+        steerEnabled: false,
+        customPrompts: [],
+        threadStatusById: {},
+        activeTurnIdByThread: {},
+        rateLimitsByWorkspace: {},
+        pendingInterruptsRef: { current: new Set<string>() },
+        dispatch: vi.fn(),
+        getCustomName: vi.fn(() => undefined),
+        markProcessing: vi.fn(),
+        markReviewing: vi.fn(),
+        setActiveTurnId: vi.fn(),
+        recordThreadActivity: vi.fn(),
+        safeMessageActivity: vi.fn(),
+        onDebug,
+        pushThreadErrorMessage: vi.fn(),
+        ensureThreadForActiveWorkspace: vi.fn(async () => "thread-1"),
+        ensureThreadForWorkspace: vi.fn(async () => "thread-1"),
+        refreshThread: vi.fn(async () => null),
+        forkThreadForWorkspace: vi.fn(async () => null),
+        updateThreadParent: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.sendUserMessageToThread(
+        workspace,
+        "thread-1",
+        "@p{John} got 9.0",
+        [],
+      );
+    });
+
+    expect(promptSpy).toHaveBeenCalledTimes(1);
+    expect(privacyAliasAnonymizeText).toHaveBeenCalledWith(
+      "@p{John} got 9.0",
+      "secret",
+    );
+    expect(sendUserMessageService).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-1",
+      "P1_alias got 9.0",
+      expect.any(Object),
+    );
+    expect(onDebug).toHaveBeenCalledWith(
+      expect.objectContaining({
+        label: "turn/start",
+        payload: expect.objectContaining({ text: "P1_alias got 9.0" }),
+      }),
+    );
+    expect(JSON.stringify(onDebug.mock.calls)).not.toContain("John");
+    promptSpy.mockRestore();
   });
 
   it("forwards explicit app mentions to turn/start", async () => {

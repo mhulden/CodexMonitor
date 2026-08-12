@@ -272,6 +272,7 @@ export type AppSettings = {
   usageShowRemaining: boolean;
   showMessageFilePath: boolean;
   mathRenderingEnabled: boolean;
+  privacyAliasRevealEnabled: boolean;
   chatHistoryScrollbackItems: number | null;
   threadTitleAutogenerationEnabled: boolean;
   automaticAppUpdateChecksEnabled: boolean;

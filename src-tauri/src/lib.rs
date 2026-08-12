@@ -21,6 +21,7 @@ mod menu;
 #[path = "menu_mobile.rs"]
 mod menu;
 mod notifications;
+mod privacy;
 mod prompts;
 mod remote_backend;
 mod rules;
@@ -307,6 +308,10 @@ pub fn run() {
             notifications::is_macos_debug_build,
             notifications::app_build_type,
             notifications::send_notification_fallback,
+            privacy::privacy_alias_anonymize_text,
+            privacy::privacy_alias_reveal_text,
+            privacy::privacy_alias_contains_markers,
+            privacy::privacy_alias_contains_aliases,
             tailscale::tailscale_status,
             tailscale::tailscale_daemon_command_preview,
             tailscale::tailscale_daemon_start,
