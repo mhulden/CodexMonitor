@@ -63,6 +63,37 @@ If sensitive data appears inside a code fence or inline code span, move it out o
 the code context before sending or use the standalone tool intentionally on the
 file content.
 
+## Cryptographic Design
+
+Privacy aliases are self-decrypting encrypted tokens, not hashes. This is what
+allows a later reveal step to recover plaintext from only the alias text and the
+same passphrase.
+
+The current `P1_` format works as follows:
+
+- The user passphrase is stretched into a 64-byte key with Argon2id.
+- The plaintext inside `@p{...}` / `@private{...}` is encrypted with AES-256-SIV.
+- The encrypted bytes are encoded with unpadded URL-safe Base64.
+- The final alias is emitted as `P1_<base64url-ciphertext>`.
+- Additional authenticated data binds tokens to the CodexMonitor privacy-alias
+  v1 format.
+
+AES-SIV is intentionally deterministic here. The same plaintext and passphrase
+produce the same alias, which helps the model preserve identity consistency
+without seeing the underlying value. A different passphrase produces different
+aliases.
+
+Important limits:
+
+- Passphrase strength matters. A weak passphrase weakens the whole layer.
+- There is no server-side vault or recovery mechanism.
+- If the passphrase is lost, existing `P1_...` aliases cannot be revealed.
+- Aliases are authenticated: a wrong passphrase or malformed token is left
+  unchanged instead of producing guessed plaintext.
+- This layer protects explicitly marked text before it is sent to Codex; it does
+  not inspect arbitrary files, screenshots, attachments, terminal output, or
+  unmarked sensitive text.
+
 ## Standalone File Tool
 
 Release builds include `codexmonitor_privacy`, which can anonymize or reveal
@@ -115,3 +146,27 @@ codexmonitor_privacy reveal remote-file.private.csv > remote-file.revealed.csv
 - The standalone CLI lives in `src-tauri/src/bin/codexmonitor_privacy.rs`.
 - Aliases use the `P1_` prefix for the current wire/storage format.
 - The encryption path is deterministic for the same plaintext and passphrase so repeated names map to repeated aliases within a workspace/task.
+
+## Future Expansion
+
+This module is deliberately lightweight. It is meant to make real UX testing
+possible before adding heavier privacy infrastructure.
+
+Possible future directions:
+
+- Workspace-scoped vaults for stable alias registries, metadata, labels, and
+  rotation.
+- OS keychain or encrypted-at-rest storage for passphrase/session management.
+- Workspace policies that warn about private markers inside code fences or
+  attachments.
+- Optional whole-file anonymization workflows for CSV, Markdown, JSON, and
+  tabular data.
+- Bulk reveal/anonymize commands that can rewrite files in place with backups.
+- Team/shared vault export for environments where multiple users need consistent
+  aliases.
+- Stronger UX around passphrase quality and explicit workspace privacy state.
+
+Those are intentionally out of scope for the first version. The current design
+keeps the model, daemon, debug payloads, and stored chat history on the alias
+side of the boundary while avoiding a persistent vault that users must manage
+before the feature has been tested in real workflows.
