@@ -69,11 +69,14 @@ subscriptions.
 - `item/commandExecution/terminalInteraction`
 - `item/completed`
 - `item/fileChange/outputDelta`
+- `item/mcpToolCall/progress`
 - `item/plan/delta`
 - `item/reasoning/summaryPartAdded`
 - `item/reasoning/summaryTextDelta`
 - `item/reasoning/textDelta`
 - `item/started`
+- `mcpServer/oauthLogin/completed`
+- `mcpServer/startupStatus/updated`
 - `thread/archived`
 - `thread/closed`
 - `thread/name/updated`
@@ -103,6 +106,9 @@ These arrive on the same frontend event stream but are not Codex v2
 - `codex/connected` (CodexMonitor synthetic bridge event)
 - `codex/event/skills_update_available` (handled via
   `isSkillsUpdateAvailableEvent(...)` in `useSkills.ts`)
+- `item/mcpToolCall/progress`, `mcpServer/oauthLogin/completed`, and
+  `mcpServer/startupStatus/updated` (handled by the Settings MCP diagnostics
+  panel via `useSettingsMcpSection.ts`)
 
 ## Conversation Compaction Signals (Codex v2)
 
@@ -127,11 +133,8 @@ events are currently not routed:
 - `deprecationNotice`
 - `fuzzyFileSearch/sessionCompleted`
 - `fuzzyFileSearch/sessionUpdated`
-- `item/mcpToolCall/progress`
 - `item/autoApprovalReview/completed`
 - `item/autoApprovalReview/started`
-- `mcpServer/oauthLogin/completed`
-- `mcpServer/startupStatus/updated`
 - `model/rerouted`
 - `rawResponseItem/completed`
 - `serverRequest/resolved`

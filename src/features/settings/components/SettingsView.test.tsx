@@ -19,6 +19,7 @@ import {
   getExperimentalFeatureList,
   isMobileRuntime,
   getModelList,
+  listMcpServerStatus,
   listWorkspaces,
 } from "@services/tauri";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
@@ -42,6 +43,7 @@ vi.mock("@services/tauri", async () => {
     getExperimentalFeatureList: vi.fn(),
     getAgentsSettings: vi.fn(),
     isMobileRuntime: vi.fn(),
+    listMcpServerStatus: vi.fn(),
     listWorkspaces: vi.fn(),
   };
 });
@@ -53,12 +55,14 @@ const getModelListMock = vi.mocked(getModelList);
 const getExperimentalFeatureListMock = vi.mocked(getExperimentalFeatureList);
 const getAgentsSettingsMock = vi.mocked(getAgentsSettings);
 const isMobileRuntimeMock = vi.mocked(isMobileRuntime);
+const listMcpServerStatusMock = vi.mocked(listMcpServerStatus);
 const listWorkspacesMock = vi.mocked(listWorkspaces);
 connectWorkspaceMock.mockResolvedValue(undefined);
 getAppBuildTypeMock.mockResolvedValue("release");
 getConfigModelMock.mockResolvedValue(null);
 isMobileRuntimeMock.mockResolvedValue(false);
 listWorkspacesMock.mockResolvedValue([]);
+listMcpServerStatusMock.mockResolvedValue({ result: { data: [] } });
 getAgentsSettingsMock.mockResolvedValue({
   configPath: "/Users/me/.codex/config.toml",
   multiAgentEnabled: false,

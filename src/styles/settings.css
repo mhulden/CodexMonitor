@@ -1088,6 +1088,233 @@
   gap: 6px;
 }
 
+.settings-mcp-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.settings-mcp-workspace-field {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.settings-mcp-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.settings-mcp-refresh svg,
+.settings-mcp-server-title svg,
+.settings-mcp-status svg,
+.settings-mcp-tools-title svg {
+  width: 14px;
+  height: 14px;
+}
+
+.settings-mcp-help {
+  margin-bottom: 14px;
+}
+
+.settings-mcp-error {
+  margin: 8px 0 14px;
+}
+
+.settings-mcp-server-list,
+.settings-mcp-diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-mcp-empty {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-muted);
+  color: var(--text-subtle);
+  background: color-mix(in srgb, var(--surface-card) 55%, transparent);
+  font-size: 12px;
+}
+
+.settings-mcp-server-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-muted);
+  background: var(--surface-card);
+}
+
+.settings-mcp-server-header,
+.settings-mcp-status-row,
+.settings-mcp-diagnostics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-mcp-server-title,
+.settings-mcp-status,
+.settings-mcp-tools-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settings-mcp-server-title {
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-mcp-status-row {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.settings-mcp-status {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.settings-mcp-status-label {
+  color: var(--text-subtle);
+}
+
+.settings-mcp-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 180px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-muted);
+  background: var(--surface-control);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-mcp-pill.is-success {
+  border-color: color-mix(in srgb, var(--status-success) 45%, var(--border-muted));
+  background: color-mix(in srgb, var(--status-success) 12%, transparent);
+  color: var(--status-success);
+}
+
+.settings-mcp-pill.is-warning {
+  border-color: color-mix(in srgb, var(--status-warning) 50%, var(--border-muted));
+  background: color-mix(in srgb, var(--status-warning) 14%, transparent);
+  color: var(--status-warning);
+}
+
+.settings-mcp-pill.is-error {
+  border-color: color-mix(in srgb, var(--status-error) 50%, var(--border-muted));
+  background: color-mix(in srgb, var(--status-error) 12%, transparent);
+  color: var(--status-error);
+}
+
+.settings-mcp-detail,
+.settings-mcp-diagnostic-detail {
+  color: var(--text-subtle);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-mcp-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.settings-mcp-tools-title {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.settings-mcp-tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-mcp-tool {
+  max-width: 220px;
+  padding: 4px 7px;
+  border-radius: 8px;
+  border: 1px solid var(--border-muted);
+  background: var(--surface-control);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-mcp-diagnostics-header {
+  margin-top: 18px;
+}
+
+.settings-mcp-diagnostics-header .settings-subsection-title {
+  margin-top: 0;
+}
+
+.settings-mcp-diagnostic {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-muted);
+  background: var(--surface-card);
+}
+
+.settings-mcp-diagnostic.is-success {
+  border-color: color-mix(in srgb, var(--status-success) 35%, var(--border-muted));
+}
+
+.settings-mcp-diagnostic.is-warning {
+  border-color: color-mix(in srgb, var(--status-warning) 40%, var(--border-muted));
+}
+
+.settings-mcp-diagnostic.is-error {
+  border-color: color-mix(in srgb, var(--status-error) 40%, var(--border-muted));
+}
+
+.settings-mcp-diagnostic-main,
+.settings-mcp-diagnostic-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-mcp-diagnostic-title {
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settings-mcp-diagnostic-server {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.settings-mcp-diagnostic-meta {
+  justify-content: flex-start;
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
 .settings-visually-hidden {
   position: absolute;
   width: 1px;

@@ -16,6 +16,7 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "item/commandExecution/terminalInteraction",
   "item/completed",
   "item/fileChange/outputDelta",
+  "item/mcpToolCall/progress",
   "item/plan/delta",
   "item/reasoning/summaryPartAdded",
   "item/reasoning/summaryTextDelta",
@@ -23,6 +24,8 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "item/started",
   "item/tool/requestUserInput",
   "mcpServer/elicitation/request",
+  "mcpServer/oauthLogin/completed",
+  "mcpServer/startupStatus/updated",
   "thread/archived",
   "thread/closed",
   "thread/name/updated",
@@ -41,6 +44,9 @@ export type SupportedAppServerMethod = (typeof SUPPORTED_APP_SERVER_METHODS)[num
 export const METHODS_HANDLED_OUTSIDE_USE_APP_SERVER_EVENTS = [
   "app/list/updated",
   "codex/event/skills_update_available",
+  "item/mcpToolCall/progress",
+  "mcpServer/oauthLogin/completed",
+  "mcpServer/startupStatus/updated",
 ] as const satisfies readonly SupportedAppServerMethod[];
 
 const SUPPORTED_METHOD_SET = new Set<string>(SUPPORTED_APP_SERVER_METHODS);
@@ -115,4 +121,24 @@ export function isSkillsUpdateAvailableEvent(event: AppServerEvent): boolean {
 
 export function isAppListUpdatedEvent(event: AppServerEvent): boolean {
   return getAppServerRawMethod(event) === "app/list/updated";
+}
+
+export function isMcpStartupStatusUpdatedEvent(event: AppServerEvent): boolean {
+  return getAppServerRawMethod(event) === "mcpServer/startupStatus/updated";
+}
+
+export function isMcpOauthLoginCompletedEvent(event: AppServerEvent): boolean {
+  return getAppServerRawMethod(event) === "mcpServer/oauthLogin/completed";
+}
+
+export function isMcpToolCallProgressEvent(event: AppServerEvent): boolean {
+  return getAppServerRawMethod(event) === "item/mcpToolCall/progress";
+}
+
+export function isMcpDiagnosticEvent(event: AppServerEvent): boolean {
+  return (
+    isMcpStartupStatusUpdatedEvent(event) ||
+    isMcpOauthLoginCompletedEvent(event) ||
+    isMcpToolCallProgressEvent(event)
+  );
 }

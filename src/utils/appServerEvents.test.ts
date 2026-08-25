@@ -10,6 +10,9 @@ import {
   isApprovalRequestMethod,
   isAppListUpdatedEvent,
   isMcpElicitationRequestMethod,
+  isMcpOauthLoginCompletedEvent,
+  isMcpStartupStatusUpdatedEvent,
+  isMcpToolCallProgressEvent,
   isSkillsUpdateAvailableEvent,
   isSupportedAppServerMethod,
 } from "./appServerEvents";
@@ -71,6 +74,33 @@ describe("appServerEvents", () => {
 
     expect(isAppListUpdatedEvent(canonicalEvent)).toBe(true);
     expect(isAppListUpdatedEvent(nonCanonicalMethod)).toBe(false);
+  });
+
+  it("matches canonical MCP diagnostic event methods only", () => {
+    expect(
+      isMcpStartupStatusUpdatedEvent(makeEvent({
+        method: "mcpServer/startupStatus/updated",
+        params: {},
+      })),
+    ).toBe(true);
+    expect(
+      isMcpOauthLoginCompletedEvent(makeEvent({
+        method: "mcpServer/oauthLogin/completed",
+        params: {},
+      })),
+    ).toBe(true);
+    expect(
+      isMcpToolCallProgressEvent(makeEvent({
+        method: "item/mcpToolCall/progress",
+        params: {},
+      })),
+    ).toBe(true);
+    expect(
+      isMcpStartupStatusUpdatedEvent(makeEvent({
+        method: "mcpServer/startupStatusUpdated",
+        params: {},
+      })),
+    ).toBe(false);
   });
 
   it("gracefully handles malformed event payloads", () => {

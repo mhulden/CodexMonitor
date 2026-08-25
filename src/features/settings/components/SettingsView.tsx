@@ -136,6 +136,7 @@ export function SettingsView({
     onDownloadDictationModel,
     onCancelDictationDownload,
     onRemoveDictationModel,
+    activeSection,
   });
 
   useSettingsViewCloseShortcuts(onClose);

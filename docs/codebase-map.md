@@ -37,6 +37,7 @@ If a behavior must work in both app and daemon, implement it in `src-tauri/src/s
 | Change prompts CRUD/listing behavior | `src/features/prompts/hooks/useCustomPrompts.ts`, `src/features/prompts/components/PromptPanel.tsx`, `src/services/tauri.ts`, `src-tauri/src/prompts.rs`, `src-tauri/src/shared/prompts_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` |
 | Change file read/write for Agents/config | `src/services/tauri.ts`, `src-tauri/src/files/mod.rs`, `src-tauri/src/shared/files_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` |
 | Change privacy alias anonymize/reveal behavior | `src/features/privacy/privacyAliases.ts`, `src/features/threads/hooks/useThreadMessaging.ts`, `src/features/messages/components/Markdown.tsx`, `src/services/tauri.ts`, `src-tauri/src/privacy.rs`, `src-tauri/src/shared/privacy_alias_core.rs`, `src-tauri/src/bin/codexmonitor_privacy.rs` |
+| Change MCP server status/diagnostics UI | `src/features/settings/hooks/useSettingsMcpSection.ts`, `src/features/settings/components/sections/SettingsMcpSection.tsx`, `src/utils/appServerEvents.ts`, `src/services/tauri.ts`, `src-tauri/src/shared/codex_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc/codex.rs` |
 | Add/change daemon JSON-RPC surface | `src-tauri/src/bin/codex_monitor_daemon/rpc.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc/*`, `src-tauri/src/bin/codex_monitor_daemon.rs`, matching shared core |
 
 ## Frontend Navigation
@@ -98,6 +99,15 @@ Use TS/Vite aliases for refactor-safe imports:
 - Send-path anonymization: `src/features/threads/hooks/useThreadMessaging.ts`
 - Display-path local reveal: `src/features/messages/components/Markdown.tsx`
 - Display setting: `src/features/settings/components/sections/SettingsDisplaySection.tsx`, `src/features/settings/hooks/useAppSettings.ts`, `src/types.ts`, `src-tauri/src/types.rs`
+
+### MCP
+
+- Settings status/diagnostics hook: `src/features/settings/hooks/useSettingsMcpSection.ts`
+- Settings UI section: `src/features/settings/components/sections/SettingsMcpSection.tsx`
+- App-server event guards: `src/utils/appServerEvents.ts`
+- Existing `/mcp` chat command status summary: `src/features/threads/hooks/useThreadMessaging.ts`, `src/features/threads/hooks/threadMessagingHelpers.ts`
+- IPC wrapper and backend request path: `src/services/tauri.ts` -> `src-tauri/src/shared/codex_core.rs` -> `mcpServerStatus/list`
+- Remote daemon parity: `src-tauri/src/bin/codex_monitor_daemon/rpc/codex.rs`, `src-tauri/src/remote_backend/mod.rs`
 
 ## Backend App (Tauri) Navigation
 

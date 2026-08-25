@@ -16,9 +16,11 @@ import { useSettingsEnvironmentsSection } from "./useSettingsEnvironmentsSection
 import { useSettingsFeaturesSection } from "./useSettingsFeaturesSection";
 import { useSettingsGitSection } from "./useSettingsGitSection";
 import { useSettingsAgentsSection } from "./useSettingsAgentsSection";
+import { useSettingsMcpSection } from "./useSettingsMcpSection";
 import { useSettingsProjectsSection } from "./useSettingsProjectsSection";
 import { useSettingsServerSection } from "./useSettingsServerSection";
 import type { GroupedWorkspaces } from "./settingsSectionTypes";
+import type { CodexSection } from "@settings/components/settingsTypes";
 import {
   COMPOSER_PRESET_CONFIGS,
   COMPOSER_PRESET_LABELS,
@@ -66,6 +68,7 @@ type UseSettingsViewOrchestrationArgs = {
   onDownloadDictationModel?: () => void;
   onCancelDictationDownload?: () => void;
   onRemoveDictationModel?: () => void;
+  activeSection?: CodexSection;
 };
 
 export function useSettingsViewOrchestration({
@@ -97,6 +100,7 @@ export function useSettingsViewOrchestration({
   onDownloadDictationModel,
   onCancelDictationDownload,
   onRemoveDictationModel,
+  activeSection,
 }: UseSettingsViewOrchestrationArgs) {
   const projects = useMemo(
     () => groupedWorkspaces.flatMap((group) => group.workspaces),
@@ -213,6 +217,7 @@ export function useSettingsViewOrchestration({
   });
 
   const agentsSectionProps = useSettingsAgentsSection({ projects });
+  const mcpSectionProps = useSettingsMcpSection(projects, activeSection === "mcp");
 
   return {
     aboutSectionProps: {
@@ -272,6 +277,7 @@ export function useSettingsViewOrchestration({
     gitSectionProps,
     serverSectionProps,
     agentsSectionProps,
+    mcpSectionProps,
     codexSectionProps,
     featuresSectionProps,
   };
