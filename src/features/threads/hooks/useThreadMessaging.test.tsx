@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { act, renderHook } from "@testing-library/react";
+import { act, fireEvent, renderHook, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as Sentry from "@sentry/react";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@services/tauri";
 import type { WorkspaceInfo } from "@/types";
 import { useThreadMessaging } from "./useThreadMessaging";
+import { clearPrivacyAliasSessionPassphrase } from "@/features/privacy/privacyAliases";
 
 vi.mock("@sentry/react", () => ({
   metrics: {
@@ -74,6 +75,8 @@ describe("useThreadMessaging telemetry", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPrivacyAliasSessionPassphrase();
+    document.querySelectorAll(".privacy-passphrase-modal").forEach((element) => element.remove());
     vi.mocked(sendUserMessageService).mockResolvedValue({
       result: {
         turn: { id: "turn-1" },
@@ -177,7 +180,6 @@ describe("useThreadMessaging telemetry", () => {
       changed: true,
       replacements: 1,
     });
-    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("secret");
     const onDebug = vi.fn();
     const { result } = renderHook(() =>
       useThreadMessaging({
@@ -211,16 +213,27 @@ describe("useThreadMessaging telemetry", () => {
       }),
     );
 
+    const sendPromise = result.current.sendUserMessageToThread(
+      workspace,
+      "thread-1",
+      "@p{John} got 9.0",
+      [],
+    );
+    await screen.findByRole("dialog", { name: "Privacy alias passphrase" });
+    const input = document.querySelector<HTMLInputElement>("#privacy-passphrase-input");
+    expect(input).not.toBeNull();
+    if (!input) {
+      throw new Error("Expected privacy passphrase input");
+    }
+    fireEvent.change(input, { target: { value: "secret" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await act(async () => {
-      await result.current.sendUserMessageToThread(
-        workspace,
-        "thread-1",
-        "@p{John} got 9.0",
-        [],
-      );
+      await sendPromise;
     });
 
-    expect(promptSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Privacy alias passphrase" })).toBeNull();
+    });
     expect(privacyAliasAnonymizeText).toHaveBeenCalledWith(
       "@p{John} got 9.0",
       "secret",
@@ -238,7 +251,6 @@ describe("useThreadMessaging telemetry", () => {
       }),
     );
     expect(JSON.stringify(onDebug.mock.calls)).not.toContain("John");
-    promptSpy.mockRestore();
   });
 
   it("forwards explicit app mentions to turn/start", async () => {

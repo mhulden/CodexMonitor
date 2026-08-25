@@ -1,0 +1,11 @@
+.privacy-passphrase-modal-card {
+  width: min(420px, calc(100vw - 32px));
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.privacy-passphrase-error[hidden] {
+  display: none;
+}
