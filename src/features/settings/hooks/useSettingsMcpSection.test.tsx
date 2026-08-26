@@ -2,12 +2,13 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppServerEvent, WorkspaceInfo } from "@/types";
-import { listMcpServerStatus } from "@services/tauri";
+import { listMcpServerStatus, reloadMcpServerConfig } from "@services/tauri";
 import { subscribeAppServerEvents } from "@services/events";
 import { useSettingsMcpSection } from "./useSettingsMcpSection";
 
 vi.mock("@services/tauri", () => ({
   listMcpServerStatus: vi.fn(),
+  reloadMcpServerConfig: vi.fn(),
 }));
 
 vi.mock("@services/events", () => ({
@@ -129,6 +130,104 @@ describe("useSettingsMcpSection", () => {
       });
       expect(result.current.servers[0].toolNames).toEqual(["list_issues"]);
     });
+  });
+
+  it("reloads MCP configuration and refreshes status", async () => {
+    vi.mocked(listMcpServerStatus)
+      .mockResolvedValueOnce({ result: { data: [] } })
+      .mockResolvedValueOnce({
+        result: {
+          data: [
+            {
+              name: "browser",
+              startup_status: "ready",
+              tools: ["mcp__browser__browser_navigate"],
+            },
+          ],
+        },
+      });
+    vi.mocked(reloadMcpServerConfig).mockResolvedValueOnce({});
+
+    const { result } = renderHook(() =>
+      useSettingsMcpSection([connectedWorkspace]),
+    );
+
+    await waitFor(() => {
+      expect(listMcpServerStatus).toHaveBeenCalledTimes(1);
+    });
+
+    act(() => {
+      result.current.onReload();
+    });
+
+    await waitFor(() => {
+      expect(reloadMcpServerConfig).toHaveBeenCalledWith("workspace-1");
+      expect(listMcpServerStatus).toHaveBeenCalledTimes(2);
+      expect(result.current.servers[0]).toMatchObject({
+        name: "browser",
+        startupStatus: "ready",
+        toolNames: ["browser_navigate"],
+      });
+    });
+  });
+
+  it("copies an MCP diagnostic report for the selected workspace", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    vi.mocked(listMcpServerStatus).mockResolvedValueOnce({
+      result: {
+        data: [
+          {
+            name: "browser",
+            enabled: true,
+            startupStatus: "ready",
+            authStatus: "authenticated",
+            tools: ["mcp__browser__browser_navigate"],
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useSettingsMcpSection([connectedWorkspace]),
+    );
+
+    await waitFor(() => {
+      expect(result.current.servers).toHaveLength(1);
+    });
+
+    act(() => {
+      listener?.({
+        workspace_id: "workspace-1",
+        message: {
+          method: "item/mcpToolCall/progress",
+          params: { serverName: "browser", toolName: "browser_navigate" },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.diagnostics).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.onCopyDiagnosticReport();
+    });
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledTimes(1);
+      expect(result.current.copyStatus).toBe("copied");
+    });
+    const report = writeText.mock.calls[0][0] as string;
+    expect(report).toContain("CodexMonitor MCP diagnostics");
+    expect(report).toContain("Workspace: Workspace One (workspace-1)");
+    expect(report).toContain("Workspace path: /tmp/workspace-one");
+    expect(report).toContain("- browser");
+    expect(report).toContain("tools: browser_navigate");
+    expect(report).toContain("Tool call progress");
   });
 
   it("ignores diagnostics from non-selected workspaces", async () => {

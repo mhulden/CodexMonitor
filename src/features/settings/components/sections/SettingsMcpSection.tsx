@@ -1,5 +1,7 @@
 import Activity from "lucide-react/dist/esm/icons/activity";
+import Copy from "lucide-react/dist/esm/icons/copy";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
+import RotateCw from "lucide-react/dist/esm/icons/rotate-cw";
 import Server from "lucide-react/dist/esm/icons/server";
 import ShieldCheck from "lucide-react/dist/esm/icons/shield-check";
 import Wrench from "lucide-react/dist/esm/icons/wrench";
@@ -41,13 +43,23 @@ export function SettingsMcpSection({
   servers,
   diagnostics,
   isLoading,
+  isReloading,
   error,
+  copyStatus,
   lastUpdatedAt,
   onSelectWorkspace,
   onRefresh,
+  onReload,
+  onCopyDiagnosticReport,
   onClearDiagnostics,
 }: SettingsMcpSectionProps) {
   const hasConnectedWorkspaces = connectedWorkspaces.length > 0;
+  const copyLabel =
+    copyStatus === "copied"
+      ? "Copied"
+      : copyStatus === "failed"
+        ? "Copy failed"
+        : "Copy report";
 
   return (
     <SettingsSection
@@ -73,15 +85,37 @@ export function SettingsMcpSection({
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          className="secondary settings-mcp-refresh"
-          onClick={onRefresh}
-          disabled={!selectedWorkspace || isLoading}
-        >
-          <RefreshCw aria-hidden />
-          {isLoading ? "Refreshing" : "Refresh"}
-        </button>
+        <div className="settings-mcp-toolbar-actions">
+          <button
+            type="button"
+            className="secondary settings-mcp-action"
+            onClick={onRefresh}
+            disabled={!selectedWorkspace || isLoading}
+          >
+            <RefreshCw aria-hidden />
+            {isLoading ? "Refreshing" : "Refresh"}
+          </button>
+          <button
+            type="button"
+            className="secondary settings-mcp-action"
+            onClick={onReload}
+            disabled={!selectedWorkspace || isReloading}
+            title="Reload MCP server configuration from disk on the app-server host."
+          >
+            <RotateCw aria-hidden />
+            {isReloading ? "Reloading" : "Reload MCP servers"}
+          </button>
+          <button
+            type="button"
+            className="secondary settings-mcp-action"
+            onClick={onCopyDiagnosticReport}
+            disabled={!selectedWorkspace}
+            title="Copy MCP server status and recent diagnostics."
+          >
+            <Copy aria-hidden />
+            {copyLabel}
+          </button>
+        </div>
       </div>
 
       <div className="settings-help settings-mcp-help">

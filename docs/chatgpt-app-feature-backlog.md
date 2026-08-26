@@ -19,7 +19,9 @@ Possible scope:
 Current slice:
 
 - MCP server status and live diagnostics are available in Settings > MCP.
-- The first slice is read-only and uses the active Codex app-server or remote daemon.
+- MCP configuration can be reloaded from disk from Settings > MCP.
+- A copyable diagnostic report summarizes configured servers, tools, auth/startup state, and recent MCP events.
+- The current slice uses the active Codex app-server or remote daemon.
 - Plugin browsing/install and MCP config mutation remain future work.
 
 Why it matters:

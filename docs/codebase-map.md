@@ -106,7 +106,7 @@ Use TS/Vite aliases for refactor-safe imports:
 - Settings UI section: `src/features/settings/components/sections/SettingsMcpSection.tsx`
 - App-server event guards: `src/utils/appServerEvents.ts`
 - Existing `/mcp` chat command status summary: `src/features/threads/hooks/useThreadMessaging.ts`, `src/features/threads/hooks/threadMessagingHelpers.ts`
-- IPC wrapper and backend request path: `src/services/tauri.ts` -> `src-tauri/src/shared/codex_core.rs` -> `mcpServerStatus/list`
+- IPC wrapper and backend request path: `src/services/tauri.ts` -> `src-tauri/src/shared/codex_core.rs` -> `mcpServerStatus/list`, `config/mcpServer/reload`
 - Remote daemon parity: `src-tauri/src/bin/codex_monitor_daemon/rpc/codex.rs`, `src-tauri/src/remote_backend/mod.rs`
 
 ## Backend App (Tauri) Navigation

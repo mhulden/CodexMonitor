@@ -1093,6 +1093,7 @@
   align-items: flex-end;
   gap: 10px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .settings-mcp-workspace-field {
@@ -1100,14 +1101,22 @@
   margin-bottom: 0;
 }
 
-.settings-mcp-refresh {
+.settings-mcp-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-mcp-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 0;
 }
 
-.settings-mcp-refresh svg,
+.settings-mcp-action svg,
 .settings-mcp-server-title svg,
 .settings-mcp-status svg,
 .settings-mcp-tools-title svg {

@@ -168,6 +168,7 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 - `experimentalFeature/list`
 - `collaborationMode/list`
 - `mcpServerStatus/list`
+- `config/mcpServer/reload`
 - `account/login/start`
 - `account/login/cancel`
 - `account/rateLimits/read`
@@ -179,6 +180,7 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 Notes:
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
 - `account/rateLimits/read` may return snapshot-only `rateLimitResetCredits.availableCount`; `account/rateLimitResetCredit/consume` spends one earned reset with an idempotency key. Clients should refetch `account/rateLimits/read` after each consume attempt.
+- `config/mcpServer/reload` is exposed from Settings > MCP as a conservative reload-from-disk action. It reloads configuration on the app-server host, which is the daemon machine in remote mode, then CodexMonitor refreshes `mcpServerStatus/list`.
 
 ## Missing Client Requests (Codex v2 ClientRequest Methods)
 
@@ -190,7 +192,6 @@ Compared against Codex v2 request methods, CodexMonitor currently does not send:
 - `command/exec/terminate`
 - `command/exec/write`
 - `config/batchWrite`
-- `config/mcpServer/reload`
 - `config/read`
 - `config/value/write`
 - `configRequirements/read`

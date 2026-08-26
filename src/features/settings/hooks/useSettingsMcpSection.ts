@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AppServerEvent, WorkspaceInfo } from "@/types";
-import { listMcpServerStatus } from "@services/tauri";
+import { listMcpServerStatus, reloadMcpServerConfig } from "@services/tauri";
 import { subscribeAppServerEvents } from "@services/events";
 import {
   getAppServerParams,
@@ -38,10 +38,14 @@ export type SettingsMcpSectionProps = {
   servers: McpServerDisplay[];
   diagnostics: McpDiagnostic[];
   isLoading: boolean;
+  isReloading: boolean;
   error: string | null;
+  copyStatus: "idle" | "copied" | "failed";
   lastUpdatedAt: number | null;
   onSelectWorkspace: (workspaceId: string) => void;
   onRefresh: () => void;
+  onReload: () => void;
+  onCopyDiagnosticReport: () => void;
   onClearDiagnostics: () => void;
 };
 
@@ -224,6 +228,88 @@ function diagnosticFromEvent(event: AppServerEvent): McpDiagnostic | null {
   };
 }
 
+function formatReportTime(timestamp: number | null): string {
+  return timestamp ? new Date(timestamp).toISOString() : "never";
+}
+
+export function buildMcpDiagnosticReport({
+  workspace,
+  servers,
+  diagnostics,
+  lastUpdatedAt,
+}: {
+  workspace: WorkspaceInfo | null;
+  servers: McpServerDisplay[];
+  diagnostics: McpDiagnostic[];
+  lastUpdatedAt: number | null;
+}): string {
+  const lines = [
+    "CodexMonitor MCP diagnostics",
+    `Workspace: ${workspace ? `${workspace.name} (${workspace.id})` : "none"}`,
+    `Workspace path: ${workspace?.path ?? "none"}`,
+    `Last status refresh: ${formatReportTime(lastUpdatedAt)}`,
+    "",
+    "Configured servers:",
+  ];
+
+  if (servers.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const server of servers) {
+      lines.push(`- ${server.name}`);
+      lines.push(`  enabled: ${server.enabled === null ? "unknown" : server.enabled ? "true" : "false"}`);
+      lines.push(`  startup: ${server.startupStatus ?? "unknown"}`);
+      lines.push(`  auth: ${server.authStatus ?? "unknown"}`);
+      lines.push(`  tools: ${server.toolNames.length ? server.toolNames.join(", ") : "none"}`);
+      if (server.detail) {
+        lines.push(`  detail: ${server.detail}`);
+      }
+    }
+  }
+
+  lines.push("", "Recent diagnostics:");
+  if (diagnostics.length === 0) {
+    lines.push("- none");
+  } else {
+    for (const diagnostic of diagnostics) {
+      lines.push(
+        `- ${formatReportTime(diagnostic.timestamp)} ${diagnostic.title} (${diagnostic.method})`,
+      );
+      if (diagnostic.serverName) {
+        lines.push(`  server: ${diagnostic.serverName}`);
+      }
+      if (diagnostic.detail) {
+        lines.push(`  detail: ${diagnostic.detail}`);
+      }
+    }
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.append(textarea);
+  textarea.select();
+  try {
+    const copied = document.execCommand("copy");
+    if (!copied) {
+      throw new Error("Clipboard copy failed.");
+    }
+  } finally {
+    textarea.remove();
+  }
+}
+
 export function useSettingsMcpSection(
   projects: WorkspaceInfo[],
   enabled = true,
@@ -238,7 +324,9 @@ export function useSettingsMcpSection(
   const [servers, setServers] = useState<McpServerDisplay[]>([]);
   const [diagnostics, setDiagnostics] = useState<McpDiagnostic[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const inFlightWorkspaceId = useRef<string | null>(null);
 
@@ -290,6 +378,45 @@ export function useSettingsMcpSection(
     void refresh();
   }, [refresh]);
 
+  const reload = useCallback(async () => {
+    if (!enabled || !selectedWorkspaceId) {
+      return;
+    }
+    setIsReloading(true);
+    setError(null);
+    try {
+      await reloadMcpServerConfig(selectedWorkspaceId);
+      await refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setIsReloading(false);
+    }
+  }, [enabled, refresh, selectedWorkspaceId]);
+
+  const copyDiagnosticReport = useCallback(async () => {
+    const report = buildMcpDiagnosticReport({
+      workspace: selectedWorkspace,
+      servers,
+      diagnostics,
+      lastUpdatedAt,
+    });
+    try {
+      await copyTextToClipboard(report);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    }
+  }, [diagnostics, lastUpdatedAt, selectedWorkspace, servers]);
+
+  useEffect(() => {
+    if (copyStatus === "idle") {
+      return;
+    }
+    const timer = setTimeout(() => setCopyStatus("idle"), 2000);
+    return () => clearTimeout(timer);
+  }, [copyStatus]);
+
   useEffect(() => {
     if (!enabled || !selectedWorkspaceId) {
       return;
@@ -326,11 +453,19 @@ export function useSettingsMcpSection(
     servers,
     diagnostics,
     isLoading,
+    isReloading,
     error,
+    copyStatus,
     lastUpdatedAt,
     onSelectWorkspace: setSelectedWorkspaceId,
     onRefresh: () => {
       void refresh();
+    },
+    onReload: () => {
+      void reload();
+    },
+    onCopyDiagnosticReport: () => {
+      void copyDiagnosticReport();
     },
     onClearDiagnostics: () => setDiagnostics([]),
   };
