@@ -7,6 +7,7 @@ import { usePullRequestComposer } from "@/features/git/hooks/usePullRequestCompo
 import { useAutoExitEmptyDiff } from "@/features/git/hooks/useAutoExitEmptyDiff";
 import { isMissingRepo } from "@/features/git/utils/repoErrors";
 import { useModels } from "@/features/models/hooks/useModels";
+import { isProfileBackedModel } from "@/features/models/utils/codexConfigSummary";
 import { modelSupportsFastServiceTier } from "@/features/models/utils/serviceTiers";
 import { useCollaborationModes } from "@/features/collaboration/hooks/useCollaborationModes";
 import { useCollaborationModeSelection } from "@/features/collaboration/hooks/useCollaborationModeSelection";
@@ -316,9 +317,31 @@ export default function MainApp() {
   const [selectedServiceTier, setSelectedServiceTier] = useState<
     ServiceTier | null | undefined
   >(undefined);
+  const getModelCodexArgsOverride = useCallback(
+    (id: string | null) => {
+      const model = models.find((entry) => entry.id === id) ?? null;
+      if (!isProfileBackedModel(model)) {
+        return null;
+      }
+      return model.codexArgsOverride ?? null;
+    },
+    [models],
+  );
   useEffect(() => {
     setSelectedCodexArgsOverride(normalizeCodexArgsInput(preferredCodexArgsOverride));
   }, [preferredCodexArgsOverride, threadCodexSelectionKey]);
+  useEffect(() => {
+    if (!isProfileBackedModel(selectedModel)) {
+      return;
+    }
+    const profileModel = selectedModel;
+    const next = normalizeCodexArgsInput(profileModel.codexArgsOverride);
+    if (selectedCodexArgsOverride === next) {
+      return;
+    }
+    setSelectedCodexArgsOverride(next);
+    persistThreadCodexParams({ codexArgsOverride: next });
+  }, [persistThreadCodexParams, selectedCodexArgsOverride, selectedModel]);
   useEffect(() => {
     setSelectedServiceTier(preferredServiceTier);
   }, [preferredServiceTier, threadCodexSelectionKey]);
@@ -341,6 +364,7 @@ export default function MainApp() {
     setSelectedCollaborationModeId,
     setAccessMode,
     setSelectedCodexArgsOverride,
+    getModelCodexArgsOverride,
     persistThreadCodexParams,
   });
   useEffect(() => {

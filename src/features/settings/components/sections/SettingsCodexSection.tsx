@@ -3,6 +3,7 @@ import Stethoscope from "lucide-react/dist/esm/icons/stethoscope";
 import type { Dispatch, SetStateAction } from "react";
 import type {
   AppSettings,
+  CodexConfigSummary,
   CodexDoctorResult,
   CodexUpdateResult,
   ModelOption,
@@ -20,6 +21,7 @@ type SettingsCodexSectionProps = {
   defaultModelsLoading: boolean;
   defaultModelsError: string | null;
   defaultModelsConnectedWorkspaceCount: number;
+  codexConfigSummary: CodexConfigSummary | null;
   onRefreshDefaultModels: () => void;
   codexPathDraft: string;
   codexArgsDraft: string;
@@ -71,17 +73,17 @@ const normalizeEffortValue = (value: unknown): string | null => {
   return trimmed.length > 0 ? trimmed.toLowerCase() : null;
 };
 
-function coerceSavedModelSlug(value: string | null, models: ModelOption[]): string | null {
+function coerceSavedModelId(value: string | null, models: ModelOption[]): string | null {
   const trimmed = (value ?? "").trim();
   if (!trimmed) {
     return null;
   }
-  const bySlug = models.find((model) => model.model === trimmed);
-  if (bySlug) {
-    return bySlug.model;
-  }
   const byId = models.find((model) => model.id === trimmed);
-  return byId ? byId.model : null;
+  if (byId) {
+    return byId.id;
+  }
+  const bySlug = models.find((model) => model.model === trimmed);
+  return bySlug ? bySlug.id : null;
 }
 
 const getReasoningSupport = (model: ModelOption | null): boolean => {
@@ -112,6 +114,7 @@ export function SettingsCodexSection({
   defaultModelsLoading,
   defaultModelsError,
   defaultModelsConnectedWorkspaceCount,
+  codexConfigSummary,
   onRefreshDefaultModels,
   codexPathDraft,
   codexArgsDraft,
@@ -146,15 +149,15 @@ export function SettingsCodexSection({
   onRefreshGlobalConfig,
   onSaveGlobalConfig,
 }: SettingsCodexSectionProps) {
-  const latestModelSlug = defaultModels[0]?.model ?? null;
-  const savedModelSlug = useMemo(
-    () => coerceSavedModelSlug(appSettings.lastComposerModelId, defaultModels),
+  const latestModelId = defaultModels[0]?.id ?? null;
+  const savedModelId = useMemo(
+    () => coerceSavedModelId(appSettings.lastComposerModelId, defaultModels),
     [appSettings.lastComposerModelId, defaultModels],
   );
-  const selectedModelSlug = savedModelSlug ?? latestModelSlug ?? "";
+  const selectedModelId = savedModelId ?? latestModelId ?? "";
   const selectedModel = useMemo(
-    () => defaultModels.find((model) => model.model === selectedModelSlug) ?? null,
-    [defaultModels, selectedModelSlug],
+    () => defaultModels.find((model) => model.id === selectedModelId) ?? null,
+    [defaultModels, selectedModelId],
   );
   const reasoningSupported = useMemo(
     () => getReasoningSupport(selectedModel),
@@ -195,7 +198,7 @@ export function SettingsCodexSection({
     }
     const savedRawModel = (appSettings.lastComposerModelId ?? "").trim();
     const savedRawEffort = (appSettings.lastComposerReasoningEffort ?? "").trim();
-    const shouldNormalizeModel = savedRawModel.length === 0 || savedModelSlug === null;
+    const shouldNormalizeModel = savedRawModel.length === 0 || savedModelId === null;
     const shouldNormalizeEffort =
       reasoningSupported &&
       (savedRawEffort.length === 0 ||
@@ -208,7 +211,7 @@ export function SettingsCodexSection({
 
     const next: AppSettings = {
       ...appSettings,
-      lastComposerModelId: shouldNormalizeModel ? selectedModelSlug : appSettings.lastComposerModelId,
+      lastComposerModelId: shouldNormalizeModel ? selectedModelId : appSettings.lastComposerModelId,
       lastComposerReasoningEffort: shouldNormalizeEffort
         ? selectedEffort
         : appSettings.lastComposerReasoningEffort,
@@ -222,8 +225,8 @@ export function SettingsCodexSection({
     reasoningOptions,
     reasoningSupported,
     savedEffort,
-    savedModelSlug,
-    selectedModelSlug,
+    savedModelId,
+    selectedModelId,
     selectedEffort,
   ]);
 
@@ -287,6 +290,56 @@ export function SettingsCodexSection({
         <div className="settings-help">
           These settings apply to the shared Codex app-server used across all connected workspaces.
         </div>
+        {codexConfigSummary ? (
+          <div className="settings-codex-config-summary">
+            <div className="settings-codex-config-summary-title">
+              Active Codex configuration
+            </div>
+            <dl className="settings-codex-config-summary-grid">
+              <div>
+                <dt>CODEX_HOME</dt>
+                <dd>{codexConfigSummary.codexHome || "Unknown"}</dd>
+              </div>
+              <div>
+                <dt>Codex args</dt>
+                <dd>{codexConfigSummary.codexArgs || "Default"}</dd>
+              </div>
+              <div>
+                <dt>Config model</dt>
+                <dd>{codexConfigSummary.model || "Default"}</dd>
+              </div>
+              <div>
+                <dt>Provider</dt>
+                <dd>
+                  {codexConfigSummary.providerName ||
+                    codexConfigSummary.modelProvider ||
+                    "Default"}
+                </dd>
+              </div>
+              <div>
+                <dt>Profiles</dt>
+                <dd>
+                  {codexConfigSummary.profiles.length > 0
+                    ? codexConfigSummary.profiles
+                        .map((profile) =>
+                          profile.model
+                            ? `${profile.name}: ${profile.model}${
+                                profile.modelProvider ? ` via ${profile.modelProvider}` : ""
+                              }`
+                            : profile.name,
+                        )
+                        .join(", ")
+                    : "None"}
+                </dd>
+              </div>
+            </dl>
+            {codexConfigSummary.errors.length > 0 ? (
+              <div className="settings-help-error">
+                {codexConfigSummary.errors.join(" | ")}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <div className="settings-help">
           Per-thread override processing ignores unsupported flags: <code>-m</code>/
           <code>--model</code>, <code>-a</code>/<code>--ask-for-approval</code>,{" "}
@@ -414,7 +467,7 @@ export function SettingsCodexSection({
           <select
             id="default-model"
             className="settings-select"
-            value={selectedModelSlug}
+            value={selectedModelId}
             disabled={!defaultModels.length || defaultModelsLoading}
             onChange={(event) =>
               void onUpdateAppSettings({
@@ -425,7 +478,7 @@ export function SettingsCodexSection({
             aria-label="Model"
           >
             {defaultModels.map((model) => (
-              <option key={model.model} value={model.model}>
+              <option key={model.id} value={model.id}>
                 {model.displayName?.trim() || model.model}
               </option>
             ))}

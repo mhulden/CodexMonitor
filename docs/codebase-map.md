@@ -33,6 +33,7 @@ If a behavior must work in both app and daemon, implement it in `src-tauri/src/s
 | Change thread state transitions | `src/features/threads/hooks/useThreadsReducer.ts`, `src/features/threads/hooks/threadReducer/*`, `src/features/threads/hooks/useThreads.ts`, focused thread hooks under `src/features/threads/hooks/*` |
 | Change workspace lifecycle/worktree behavior | `src/features/workspaces/hooks/useWorkspaces.ts`, `src-tauri/src/workspaces/commands.rs`, `src-tauri/src/shared/workspaces_core.rs`, `src-tauri/src/shared/workspaces_core/*`, `src-tauri/src/shared/worktree_core.rs` |
 | Change settings model/load/update | `src/features/settings/components/SettingsView.tsx`, `src/features/settings/hooks/useAppSettings.ts`, `src/services/tauri.ts`, `src-tauri/src/settings/mod.rs`, `src-tauri/src/shared/settings_core.rs`, `src-tauri/src/types.rs`, `src/types.ts` |
+| Change model picker/config profile discovery | `src/features/models/hooks/useModels.ts`, `src/features/models/utils/codexConfigSummary.ts`, `src/features/settings/hooks/useSettingsDefaultModels.ts`, `src/features/settings/components/sections/SettingsCodexSection.tsx`, `src/services/tauri.ts`, `src-tauri/src/codex/config.rs`, `src-tauri/src/shared/codex_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc/codex.rs` |
 | Change Git/GitHub backend behavior | `src/features/git/hooks/*`, `src/services/tauri.ts`, `src-tauri/src/git/mod.rs`, `src-tauri/src/shared/git_ui_core.rs`, `src-tauri/src/shared/git_ui_core/*`, `src-tauri/src/shared/git_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc/git.rs` |
 | Change prompts CRUD/listing behavior | `src/features/prompts/hooks/useCustomPrompts.ts`, `src/features/prompts/components/PromptPanel.tsx`, `src/services/tauri.ts`, `src-tauri/src/prompts.rs`, `src-tauri/src/shared/prompts_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` |
 | Change file read/write for Agents/config | `src/services/tauri.ts`, `src-tauri/src/files/mod.rs`, `src-tauri/src/shared/files_core.rs`, `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` |
@@ -82,6 +83,22 @@ Use TS/Vite aliases for refactor-safe imports:
 - Main settings surface: `src/features/settings/components/SettingsView.tsx`
 - Settings state + persistence flow: `src/features/settings/hooks/useAppSettings.ts`, `src/features/app/hooks/useAppSettingsController.ts`
 - Typed settings contracts: `src/types.ts`
+
+### Models And Codex Profiles
+
+- Runtime model picker: `src/features/models/hooks/useModels.ts`
+- Config/profile model synthesis: `src/features/models/utils/codexConfigSummary.ts`
+- Settings default-model list: `src/features/settings/hooks/useSettingsDefaultModels.ts`
+- Codex settings diagnostics UI: `src/features/settings/components/sections/SettingsCodexSection.tsx`
+- Backend config/profile summary: `src-tauri/src/codex/config.rs`
+- App/daemon shared command path: `src-tauri/src/shared/codex_core.rs`
+- Remote daemon RPC parity: `src-tauri/src/bin/codex_monitor_daemon/rpc/codex.rs`
+
+CodexMonitor augments `model/list` with local Codex config data. It reads the
+workspace-resolved `CODEX_HOME/config.toml` and sibling `*.config.toml` profile
+files, then adds profile-backed model choices that apply `--profile <name>` as
+the thread Codex args override. In remote mode this summary is read on the
+daemon host, not the GUI host.
 
 ### Git
 

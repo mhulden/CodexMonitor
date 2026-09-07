@@ -685,6 +685,44 @@ export type ModelOption = {
   serviceTiers?: { id: string; name: string; description: string }[];
   defaultServiceTier?: string | null;
   isDefault: boolean;
+  source?: "catalog" | "config" | "codex-profile";
+  codexProfileName?: string | null;
+  codexArgsOverride?: string | null;
+  modelProvider?: string | null;
+  modelProviderName?: string | null;
+  codexHome?: string | null;
+};
+
+export type CodexConfigProfileSummary = {
+  name: string;
+  path: string;
+  model: string | null;
+  modelProvider: string | null;
+  providerName: string | null;
+  baseUrl: string | null;
+  codexArgs: string;
+};
+
+export type CodexProviderSummary = {
+  id: string;
+  name: string | null;
+  baseUrl: string | null;
+  wireApi: string | null;
+  auth: string;
+};
+
+export type CodexConfigSummary = {
+  codexHome: string;
+  codexBin: string | null;
+  codexArgs: string | null;
+  activeProfile: string | null;
+  model: string | null;
+  modelProvider: string | null;
+  providerName: string | null;
+  baseUrl: string | null;
+  profiles: CodexConfigProfileSummary[];
+  providers: CodexProviderSummary[];
+  errors: string[];
 };
 
 export type CollaborationModeOption = {

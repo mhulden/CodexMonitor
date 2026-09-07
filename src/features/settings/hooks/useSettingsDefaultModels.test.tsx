@@ -1,17 +1,24 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceInfo } from "@/types";
-import { connectWorkspace, getConfigModel, getModelList } from "@services/tauri";
+import {
+  connectWorkspace,
+  getCodexConfigSummary,
+  getConfigModel,
+  getModelList,
+} from "@services/tauri";
 import { useSettingsDefaultModels } from "./useSettingsDefaultModels";
 
 vi.mock("@services/tauri", () => ({
   connectWorkspace: vi.fn(),
+  getCodexConfigSummary: vi.fn(),
   getConfigModel: vi.fn(),
   getModelList: vi.fn(),
 }));
 
 const connectWorkspaceMock = vi.mocked(connectWorkspace);
+const getCodexConfigSummaryMock = vi.mocked(getCodexConfigSummary);
 const getConfigModelMock = vi.mocked(getConfigModel);
 const getModelListMock = vi.mocked(getModelList);
 
@@ -54,6 +61,22 @@ function deferred<T>() {
 }
 
 describe("useSettingsDefaultModels", () => {
+  beforeEach(() => {
+    getCodexConfigSummaryMock.mockResolvedValue({
+      codexHome: "/home/meh/.codex",
+      codexBin: null,
+      codexArgs: null,
+      activeProfile: null,
+      model: null,
+      modelProvider: null,
+      providerName: null,
+      baseUrl: null,
+      profiles: [],
+      providers: [],
+      errors: [],
+    });
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -163,6 +186,7 @@ describe("useSettingsDefaultModels", () => {
   it("falls back to config model when model list cannot be fetched", async () => {
     connectWorkspaceMock.mockRejectedValueOnce(new Error("connect failed"));
     getConfigModelMock.mockResolvedValueOnce("gpt-5-codex");
+    getCodexConfigSummaryMock.mockRejectedValueOnce(new Error("old daemon"));
 
     const { result } = renderHook(
       ({ projects }: { projects: WorkspaceInfo[] }) => useSettingsDefaultModels(projects),
@@ -177,6 +201,48 @@ describe("useSettingsDefaultModels", () => {
       expect(result.current.models[0]?.model).toBe("gpt-5-codex");
       expect(result.current.models[0]?.displayName).toContain("(config)");
       expect(getModelListMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("includes profile-backed custom models in the default model list", async () => {
+    getConfigModelMock.mockResolvedValueOnce(null);
+    getModelListMock.mockResolvedValueOnce(modelListResponse("gpt-5.5"));
+    getCodexConfigSummaryMock.mockResolvedValueOnce({
+      codexHome: "/home/meh/.codex",
+      codexBin: null,
+      codexArgs: null,
+      activeProfile: null,
+      model: null,
+      modelProvider: null,
+      providerName: null,
+      baseUrl: null,
+      profiles: [
+        {
+          name: "qwen",
+          path: "/home/meh/.codex/qwen.config.toml",
+          model: "qwen3.8-flash-next",
+          modelProvider: "qwen-local",
+          providerName: "Qwen 3.8 Flash (local vLLM)",
+          baseUrl: "http://127.0.0.1:18300/v1",
+          codexArgs: "--profile qwen",
+        },
+      ],
+      providers: [],
+      errors: [],
+    });
+
+    const { result } = renderHook(
+      ({ projects }: { projects: WorkspaceInfo[] }) => useSettingsDefaultModels(projects),
+      {
+        initialProps: {
+          projects: [workspace("w1", true)],
+        },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.models.some((model) => model.source === "codex-profile")).toBe(true);
+      expect(result.current.configSummary?.profiles[0]?.name).toBe("qwen");
     });
   });
 });

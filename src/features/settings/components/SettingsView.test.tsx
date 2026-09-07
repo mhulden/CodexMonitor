@@ -15,6 +15,7 @@ import {
   connectWorkspace,
   getAppBuildType,
   getAgentsSettings,
+  getCodexConfigSummary,
   getConfigModel,
   getExperimentalFeatureList,
   isMobileRuntime,
@@ -42,6 +43,7 @@ vi.mock("@services/tauri", async () => {
     getConfigModel: vi.fn(),
     getExperimentalFeatureList: vi.fn(),
     getAgentsSettings: vi.fn(),
+    getCodexConfigSummary: vi.fn(),
     isMobileRuntime: vi.fn(),
     listMcpServerStatus: vi.fn(),
     listWorkspaces: vi.fn(),
@@ -50,6 +52,7 @@ vi.mock("@services/tauri", async () => {
 
 const connectWorkspaceMock = vi.mocked(connectWorkspace);
 const getAppBuildTypeMock = vi.mocked(getAppBuildType);
+const getCodexConfigSummaryMock = vi.mocked(getCodexConfigSummary);
 const getConfigModelMock = vi.mocked(getConfigModel);
 const getModelListMock = vi.mocked(getModelList);
 const getExperimentalFeatureListMock = vi.mocked(getExperimentalFeatureList);
@@ -63,6 +66,19 @@ getConfigModelMock.mockResolvedValue(null);
 isMobileRuntimeMock.mockResolvedValue(false);
 listWorkspacesMock.mockResolvedValue([]);
 listMcpServerStatusMock.mockResolvedValue({ result: { data: [] } });
+getCodexConfigSummaryMock.mockResolvedValue({
+  codexHome: "/Users/me/.codex",
+  codexBin: null,
+  codexArgs: null,
+  activeProfile: null,
+  model: null,
+  modelProvider: null,
+  providerName: null,
+  baseUrl: null,
+  profiles: [],
+  providers: [],
+  errors: [],
+});
 getAgentsSettingsMock.mockResolvedValue({
   configPath: "/Users/me/.codex/config.toml",
   multiAgentEnabled: false,

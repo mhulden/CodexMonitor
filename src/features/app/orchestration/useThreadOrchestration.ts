@@ -45,6 +45,7 @@ type UseThreadSelectionHandlersOrchestrationParams = {
   setSelectedCollaborationModeId: (id: string | null) => void;
   setAccessMode: SetState<AccessMode>;
   setSelectedCodexArgsOverride?: (value: string | null) => void;
+  getModelCodexArgsOverride?: (id: string | null) => string | null | undefined;
   persistThreadCodexParams: PersistThreadCodexParams;
 };
 
@@ -284,11 +285,13 @@ export function useThreadSelectionHandlersOrchestration({
   setSelectedCollaborationModeId,
   setAccessMode,
   setSelectedCodexArgsOverride,
+  getModelCodexArgsOverride,
   persistThreadCodexParams,
 }: UseThreadSelectionHandlersOrchestrationParams) {
   const handleSelectModel = useCallback(
     (id: string | null) => {
       setSelectedModelId(id);
+      const modelCodexArgsOverride = getModelCodexArgsOverride?.(id);
       const hasActiveThread = Boolean(activeThreadIdRef.current);
       if (!appSettingsLoading && !hasActiveThread) {
         setAppSettings((current) => {
@@ -300,14 +303,24 @@ export function useThreadSelectionHandlersOrchestration({
           return nextSettings;
         });
       }
+      if (modelCodexArgsOverride !== undefined) {
+        setSelectedCodexArgsOverride?.(modelCodexArgsOverride);
+        persistThreadCodexParams({
+          modelId: id,
+          codexArgsOverride: modelCodexArgsOverride,
+        });
+        return;
+      }
       persistThreadCodexParams({ modelId: id });
     },
     [
       activeThreadIdRef,
       appSettingsLoading,
+      getModelCodexArgsOverride,
       persistThreadCodexParams,
       queueSaveSettings,
       setAppSettings,
+      setSelectedCodexArgsOverride,
       setSelectedModelId,
     ],
   );

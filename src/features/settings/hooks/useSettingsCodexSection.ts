@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import type {
   AppSettings,
+  CodexConfigSummary,
   CodexDoctorResult,
   CodexUpdateResult,
   WorkspaceInfo,
@@ -34,6 +35,7 @@ export type SettingsCodexSectionProps = {
   defaultModelsLoading: boolean;
   defaultModelsError: string | null;
   defaultModelsConnectedWorkspaceCount: number;
+  codexConfigSummary: CodexConfigSummary | null;
   onRefreshDefaultModels: () => void;
   codexPathDraft: string;
   codexArgsDraft: string;
@@ -99,6 +101,7 @@ export const useSettingsCodexSection = ({
     isLoading: defaultModelsLoading,
     error: defaultModelsError,
     connectedWorkspaceCount: defaultModelsConnectedWorkspaceCount,
+    configSummary: codexConfigSummary,
     refresh: refreshDefaultModels,
   } = useSettingsDefaultModels(projects);
 
@@ -248,6 +251,7 @@ export const useSettingsCodexSection = ({
     defaultModelsLoading,
     defaultModelsError,
     defaultModelsConnectedWorkspaceCount,
+    codexConfigSummary,
     onRefreshDefaultModels: () => {
       void refreshDefaultModels();
     },

@@ -326,6 +326,8 @@ src-tauri/
 - The remote daemon entrypoint is `src-tauri/src/bin/codex_monitor_daemon.rs`; RPC routing lives in `src-tauri/src/bin/codex_monitor_daemon/rpc.rs` and domain handlers in `src-tauri/src/bin/codex_monitor_daemon/rpc/`.
 - Shared domain logic lives in `src-tauri/src/shared/` (notably `src-tauri/src/shared/git_ui_core/` and `src-tauri/src/shared/workspaces_core/`).
 - Codex home resolves from workspace settings (if set), then legacy `.codexmonitor/`, then `$CODEX_HOME`/`~/.codex`.
+- The model picker combines `model/list` from the active Codex app-server with local Codex configuration. Models from `$CODEX_HOME/config.toml` appear as `(config)`, and models from sibling profile files such as `$CODEX_HOME/qwen.config.toml` appear as `(profile: qwen)` and automatically apply `--profile qwen` as the thread Codex args override.
+- In remote backend mode, Codex config/profile discovery runs on the daemon host, so custom model providers must be configured in the daemon user's `CODEX_HOME`.
 - Worktree agents live under the app data directory (`worktrees/<workspace-id>`); legacy `.codex-worktrees/` paths remain supported, and the app no longer edits repo `.gitignore` files.
 - UI state (panel sizes, reduced transparency toggle, recent thread activity) is stored in `localStorage`.
 - Custom prompts load from `$CODEX_HOME/prompts` (or `~/.codex/prompts`) with optional frontmatter description/argument hints.
@@ -334,7 +336,7 @@ src-tauri/
 
 Frontend calls live in `src/services/tauri.ts` and map to commands in `src-tauri/src/lib.rs`. The current surface includes:
 
-- Settings/config/files: `get_app_settings`, `update_app_settings`, `get_codex_config_path`, `get_config_model`, `file_read`, `file_write`, `codex_doctor`, `menu_set_accelerators`.
+- Settings/config/files: `get_app_settings`, `update_app_settings`, `get_codex_config_path`, `get_config_model`, `get_codex_config_summary`, `file_read`, `file_write`, `codex_doctor`, `menu_set_accelerators`.
 - Workspaces/worktrees: `list_workspaces`, `is_workspace_path_dir`, `add_workspace`, `add_clone`, `add_worktree`, `worktree_setup_status`, `worktree_setup_mark_ran`, `rename_worktree`, `rename_worktree_upstream`, `apply_worktree_changes`, `update_workspace_settings`, `remove_workspace`, `remove_worktree`, `connect_workspace`, `list_workspace_files`, `read_workspace_file`, `open_workspace_in`, `get_open_app_icon`.
 - Threads/turns/reviews: `start_thread`, `fork_thread`, `compact_thread`, `list_threads`, `resume_thread`, `archive_thread`, `set_thread_name`, `send_user_message`, `turn_interrupt`, `respond_to_server_request`, `start_review`, `remember_approval_rule`, `get_commit_message_prompt`, `generate_commit_message`, `generate_run_metadata`.
 - Account/models/collaboration: `model_list`, `account_rate_limits`, `account_read`, `skills_list`, `apps_list`, `collaboration_mode_list`, `codex_login`, `codex_login_cancel`, `list_mcp_server_status`.

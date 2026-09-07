@@ -12,6 +12,7 @@ import {
   forkThread,
   getAppsList,
   getAgentsSettings,
+  getCodexConfigSummary,
   getExperimentalFeatureList,
   getGitHubIssues,
   getGitLog,
@@ -378,6 +379,17 @@ describe("tauri invoke wrappers", () => {
     await getRateLimitResetCredits("ws-10");
 
     expect(invokeMock).toHaveBeenCalledWith("account_rate_limit_reset_credits", {
+      workspaceId: "ws-10",
+    });
+  });
+
+  it("maps workspaceId for get_codex_config_summary", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await getCodexConfigSummary("ws-10");
+
+    expect(invokeMock).toHaveBeenCalledWith("get_codex_config_summary", {
       workspaceId: "ws-10",
     });
   });

@@ -3,6 +3,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import type { Options as NotificationOptions } from "@tauri-apps/plugin-notification";
 import type {
   AppSettings,
+  CodexConfigSummary,
   CodexUpdateResult,
   CodexDoctorResult,
   DictationModelStatus,
@@ -293,6 +294,12 @@ export async function getConfigModel(workspaceId: string): Promise<string | null
   }
   const trimmed = model.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+export async function getCodexConfigSummary(workspaceId: string) {
+  return invoke<CodexConfigSummary>("get_codex_config_summary", {
+    workspaceId,
+  });
 }
 
 export async function addWorkspace(path: string): Promise<WorkspaceInfo> {

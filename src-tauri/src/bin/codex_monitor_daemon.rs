@@ -996,6 +996,15 @@ impl DaemonState {
         codex_core::get_config_model_core(&self.workspaces, workspace_id).await
     }
 
+    async fn get_codex_config_summary(&self, workspace_id: String) -> Result<Value, String> {
+        codex_core::get_codex_config_summary_core(
+            &self.workspaces,
+            &self.app_settings,
+            workspace_id,
+        )
+        .await
+    }
+
     async fn add_clone(
         &self,
         source_workspace_id: String,

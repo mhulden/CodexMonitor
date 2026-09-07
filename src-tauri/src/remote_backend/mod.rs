@@ -156,6 +156,7 @@ fn can_retry_after_disconnect(method: &str) -> bool {
             | "set_workspace_runtime_codex_args"
             | "file_read"
             | "get_agents_settings"
+            | "get_codex_config_summary"
             | "get_config_model"
             | "get_git_commit_diff"
             | "get_git_diffs"

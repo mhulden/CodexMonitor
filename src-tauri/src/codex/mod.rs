@@ -989,6 +989,26 @@ pub(crate) async fn get_config_model(
     codex_core::get_config_model_core(&state.workspaces, workspace_id).await
 }
 
+#[tauri::command]
+pub(crate) async fn get_codex_config_summary(
+    workspace_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "get_codex_config_summary",
+            json!({ "workspaceId": workspace_id }),
+        )
+        .await;
+    }
+
+    codex_core::get_codex_config_summary_core(&state.workspaces, &state.app_settings, workspace_id)
+        .await
+}
+
 /// Generates a commit message in the background without showing in the main chat
 #[tauri::command]
 pub(crate) async fn generate_commit_message(

@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ModelOption, WorkspaceInfo } from "@/types";
-import { connectWorkspace, getConfigModel, getModelList } from "@services/tauri";
+import type { CodexConfigSummary, ModelOption, WorkspaceInfo } from "@/types";
+import {
+  connectWorkspace,
+  getCodexConfigSummary,
+  getConfigModel,
+  getModelList,
+} from "@services/tauri";
 import { parseModelListResponse } from "@/features/models/utils/modelListResponse";
+import { buildConfiguredModelOptions } from "@/features/models/utils/codexConfigSummary";
 
 type SettingsDefaultModelsState = {
   models: ModelOption[];
   isLoading: boolean;
   error: string | null;
   connectedWorkspaceCount: number;
+  configSummary: CodexConfigSummary | null;
 };
 
 const EMPTY_STATE: SettingsDefaultModelsState = {
@@ -15,9 +22,8 @@ const EMPTY_STATE: SettingsDefaultModelsState = {
   isLoading: false,
   error: null,
   connectedWorkspaceCount: 0,
+  configSummary: null,
 };
-
-const CONFIG_MODEL_DESCRIPTION = "Configured in CODEX_HOME/config.toml";
 
 const parseGptVersionScore = (slug: string): number | null => {
   const match = /^gpt-(\d+)(?:\.(\d+))?(?:\.(\d+))?/i.exec(slug.trim());
@@ -97,9 +103,10 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
         return;
       }
 
-      const [modelListResult, configModelResult] = await Promise.allSettled([
+      const [modelListResult, configModelResult, configSummaryResult] = await Promise.allSettled([
         canReadModelList ? getModelList(sourceWorkspaceId) : Promise.resolve(null),
         getConfigModel(sourceWorkspaceId),
+        getCodexConfigSummary(sourceWorkspaceId),
       ]);
       if (requestId !== requestIdRef.current) {
         return;
@@ -119,39 +126,50 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
             : String(configModelResult.reason);
         errors.push(`${sourceWorkspaceName}: ${message}`);
       }
+      if (configSummaryResult.status === "rejected") {
+        const message =
+          configSummaryResult.reason instanceof Error
+            ? configSummaryResult.reason.message
+            : String(configSummaryResult.reason);
+        errors.push(`${sourceWorkspaceName}: ${message}`);
+      }
 
       const modelsFromList = parseModelListResponse(
         modelListResult.status === "fulfilled" ? modelListResult.value : null,
       );
       const configModel =
         configModelResult.status === "fulfilled" ? configModelResult.value : null;
-      const hasConfigModel = Boolean(
-        configModel &&
-          modelsFromList.some(
-            (model) => model.model === configModel || model.id === configModel,
-          ),
-      );
-      const models = (
-        hasConfigModel || !configModel
-          ? modelsFromList
-          : [
-              {
-                id: configModel,
+      const configSummary =
+        configSummaryResult.status === "fulfilled"
+          ? {
+              ...configSummaryResult.value,
+              model: configSummaryResult.value.model ?? configModel,
+            }
+          : configModel
+            ? {
+                codexHome: "",
+                codexBin: null,
+                codexArgs: null,
+                activeProfile: null,
                 model: configModel,
-                displayName: `${configModel} (config)`,
-                description: CONFIG_MODEL_DESCRIPTION,
-                supportedReasoningEfforts: [],
-                defaultReasoningEffort: null,
-                isDefault: false,
-              },
-              ...modelsFromList,
-            ]
-      ).sort(compareModelsByLatest);
+                modelProvider: null,
+                providerName: null,
+                baseUrl: null,
+                profiles: [],
+                providers: [],
+                errors: [],
+              }
+            : null;
+      const models = [
+        ...buildConfiguredModelOptions(configSummary, modelsFromList),
+        ...modelsFromList,
+      ].sort(compareModelsByLatest);
       setState({
         models,
         isLoading: false,
         error: errors.length ? errors.join(" | ") : null,
         connectedWorkspaceCount: 1,
+        configSummary,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -161,6 +179,7 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
           isLoading: false,
           error: message,
           connectedWorkspaceCount: sourceWorkspaceId ? 1 : 0,
+          configSummary: null,
         });
       }
     }

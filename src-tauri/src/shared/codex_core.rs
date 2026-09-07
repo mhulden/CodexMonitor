@@ -21,7 +21,7 @@ use crate::shared::account::{
     activate_saved_auth_profile, build_account_response, fetch_rate_limit_reset_credits,
     list_saved_auth_profiles, read_auth_account, sync_saved_auth_profile,
 };
-use crate::types::WorkspaceEntry;
+use crate::types::{AppSettings, WorkspaceEntry};
 
 const LOGIN_START_TIMEOUT: Duration = Duration::from_secs(30);
 #[allow(dead_code)]
@@ -955,6 +955,17 @@ pub(crate) async fn get_config_model_core(
     let codex_home = resolve_codex_home_for_workspace_core(workspaces, &workspace_id).await?;
     let model = codex_config::read_config_model(Some(codex_home))?;
     Ok(json!({ "model": model }))
+}
+
+pub(crate) async fn get_codex_config_summary_core(
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    app_settings: &Mutex<AppSettings>,
+    workspace_id: String,
+) -> Result<Value, String> {
+    let codex_home = resolve_codex_home_for_workspace_core(workspaces, &workspace_id).await?;
+    let settings = app_settings.lock().await.clone();
+    serde_json::to_value(codex_config::read_config_summary(codex_home, &settings)?)
+        .map_err(|err| err.to_string())
 }
 
 #[cfg(test)]

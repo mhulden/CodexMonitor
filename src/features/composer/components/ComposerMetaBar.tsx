@@ -307,6 +307,11 @@ export function ComposerMetaBar({
                         <span className="composer-model-settings-item-title">
                           {model.displayName || model.model}
                         </span>
+                        {model.description ? (
+                          <span className="composer-model-settings-item-description">
+                            {model.description}
+                          </span>
+                        ) : null}
                       </span>
                       {active && (
                         <Check size={15} strokeWidth={1.8} aria-hidden />

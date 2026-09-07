@@ -129,6 +129,32 @@ Relevant references:
 - https://learn.chatgpt.com/docs/codex/cli
 - docs/app-server-events.md
 
+### Custom Model Provider Visibility
+
+CodexMonitor can expose Codex profile-backed local/custom models without
+requiring those models to appear in `model/list`.
+
+Current slice:
+
+- The model picker reads the workspace-resolved `CODEX_HOME/config.toml` and
+  sibling `*.config.toml` profile files.
+- Custom profile models appear as `(profile: name)` entries.
+- Selecting a profile-backed model applies `--profile <name>` as the thread
+  Codex args override.
+- Settings > Codex shows a safe diagnostic subset: active `CODEX_HOME`, Codex
+  args, config model, provider label, profile names/models, and parse/read
+  errors. Provider auth secrets, environment values, auth commands, headers, and
+  URL credentials/query strings are not exposed.
+- In remote backend mode, discovery runs on the daemon host.
+
+Future scope:
+
+- Surface richer provider capability metadata if Codex app-server exposes it.
+- Add clearer stale-daemon diagnostics when `get_codex_config_summary` is not
+  available from a remote daemon.
+- Consider profile-aware workspace defaults if users commonly want one profile
+  per workspace.
+
 ## Planning Notes
 
 - Start with MCP/plugin management and scheduled tasks; they are the most product-shaped additions.

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DebugEntry, ModelOption, WorkspaceInfo } from "../../../types";
-import { getConfigModel, getModelList } from "../../../services/tauri";
+import {
+  getCodexConfigSummary,
+  getConfigModel,
+  getModelList,
+} from "../../../services/tauri";
+import { buildConfiguredModelOptions } from "../utils/codexConfigSummary";
 import {
   normalizeEffortValue,
   parseModelListResponse,
@@ -13,8 +18,6 @@ type UseModelsOptions = {
   preferredEffort?: string | null;
   selectionKey?: string | null;
 };
-
-const CONFIG_MODEL_DESCRIPTION = "Configured in CODEX_HOME/config.toml";
 
 const findModelByIdOrModel = (
   models: ModelOption[],
@@ -160,9 +163,10 @@ export function useModels({
       payload: { workspaceId },
     });
     try {
-      const [modelListResult, configModelResult] = await Promise.allSettled([
+      const [modelListResult, configModelResult, configSummaryResult] = await Promise.allSettled([
         getModelList(workspaceId),
         getConfigModel(workspaceId),
+        getCodexConfigSummary(workspaceId),
       ]);
       const configModelFromConfig =
         configModelResult.status === "fulfilled"
@@ -178,6 +182,18 @@ export function useModels({
             configModelResult.reason instanceof Error
               ? configModelResult.reason.message
               : String(configModelResult.reason),
+        });
+      }
+      if (configSummaryResult.status === "rejected") {
+        onDebug?.({
+          id: `${Date.now()}-client-config-summary-error`,
+          timestamp: Date.now(),
+          source: "error",
+          label: "config summary error",
+          payload:
+            configSummaryResult.reason instanceof Error
+              ? configSummaryResult.reason.message
+              : String(configSummaryResult.reason),
         });
       }
       const response =
@@ -201,32 +217,45 @@ export function useModels({
         label: "model/list response",
         payload: response,
       });
-      setConfigModel(configModelFromConfig);
+      onDebug?.({
+        id: `${Date.now()}-server-config-summary`,
+        timestamp: Date.now(),
+        source: "server",
+        label: "config summary response",
+        payload:
+          configSummaryResult.status === "fulfilled"
+            ? configSummaryResult.value
+            : null,
+      });
       const dataFromServer: ModelOption[] = parseModelListResponse(response);
-      const data = (() => {
-        if (!configModelFromConfig) {
-          return dataFromServer;
-        }
-        const hasConfigModel = dataFromServer.some(
-          (model) => model.model === configModelFromConfig,
-        );
-        if (hasConfigModel) {
-          return dataFromServer;
-        }
-        const configOption: ModelOption = {
-          id: configModelFromConfig,
-          model: configModelFromConfig,
-          displayName: `${configModelFromConfig} (config)`,
-          description: CONFIG_MODEL_DESCRIPTION,
-          supportedReasoningEfforts: [],
-          defaultReasoningEffort: null,
-          isDefault: false,
-        };
-        return [configOption, ...dataFromServer];
-      })();
+      const configSummary =
+        configSummaryResult.status === "fulfilled"
+          ? {
+              ...configSummaryResult.value,
+              model: configSummaryResult.value.model ?? configModelFromConfig,
+            }
+          : configModelFromConfig
+            ? {
+                codexHome: "",
+                codexBin: null,
+                codexArgs: null,
+                activeProfile: null,
+                model: configModelFromConfig,
+                modelProvider: null,
+                providerName: null,
+                baseUrl: null,
+                profiles: [],
+                providers: [],
+                errors: [],
+              }
+            : null;
+      const effectiveConfigModel = configSummary?.model ?? configModelFromConfig;
+      setConfigModel(effectiveConfigModel);
+      const configuredOptions = buildConfiguredModelOptions(configSummary, dataFromServer);
+      const data = [...configuredOptions, ...dataFromServer];
       setModels(data);
       lastFetchedWorkspaceId.current = workspaceId;
-      const defaultModel = pickDefaultModel(data, configModelFromConfig);
+      const defaultModel = pickDefaultModel(data, effectiveConfigModel);
       const existingSelection = findModelByIdOrModel(data, selectedModelId);
       if (selectedModelId && !existingSelection) {
         hasUserSelectedModel.current = false;
