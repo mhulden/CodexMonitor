@@ -246,6 +246,21 @@ npm run tauri:build
 
 Artifacts will be in `src-tauri/target/release/bundle/` (platform-specific subfolders).
 
+GitHub releases are published by the `Release` workflow. The normal release
+path is:
+
+```bash
+# 1. Bump package.json, src-tauri/Cargo.toml, and src-tauri/tauri.conf.json.
+# 2. Commit and push the version bump.
+# 3. Tag the same commit with the matching version and push the tag.
+git tag v0.8.4
+git push fork v0.8.4
+```
+
+The release workflow also supports manual `workflow_dispatch` runs from GitHub
+Actions. Tag-triggered releases validate that the pushed tag matches the
+version in `package.json`.
+
 GitHub release builds also publish standalone daemon archives for remote backend
 setups:
 
