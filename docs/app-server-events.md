@@ -180,6 +180,7 @@ These are v2 request methods CodexMonitor currently sends to Codex app-server:
 Notes:
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
 - The model picker also calls CodexMonitor's `get_codex_config_summary` app/daemon command and augments `model/list` with workspace-resolved `CODEX_HOME/config.toml` and `*.config.toml` profile models. This is CodexMonitor-side discovery, not a Codex app-server request method.
+- `account/rateLimits/updated` is a sparse rolling update. The frontend merges available fields into the last full `account/rateLimits/read` snapshot; `null` fields in this notification mean unavailable and must not clear known usage windows or account metadata.
 - `account/rateLimits/read` may return snapshot-only `rateLimitResetCredits.availableCount`; `account/rateLimitResetCredit/consume` spends one earned reset with an idempotency key. Clients should refetch `account/rateLimits/read` after each consume attempt.
 - `config/mcpServer/reload` is exposed from Settings > MCP as a conservative reload-from-disk action. It reloads configuration on the app-server host, which is the daemon machine in remote mode, then CodexMonitor refreshes `mcpServerStatus/list`.
 

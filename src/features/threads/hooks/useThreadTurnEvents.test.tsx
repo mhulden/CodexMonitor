@@ -782,6 +782,7 @@ describe("useThreadTurnEvents", () => {
     expect(normalizeRateLimits).toHaveBeenCalledWith(
       { primary: {} },
       previousRateLimits,
+      { sparse: true },
     );
     expect(dispatch).toHaveBeenCalledWith({
       type: "setRateLimits",

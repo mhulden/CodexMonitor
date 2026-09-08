@@ -112,6 +112,10 @@ function normalizeRateLimitWindow(
   };
 }
 
+type NormalizeRateLimitsOptions = {
+  sparse?: boolean;
+};
+
 function normalizeCreditsSnapshot(
   source: Record<string, unknown>,
   previousCredits: CreditsSnapshot | null,
@@ -309,16 +313,20 @@ export function normalizeTokenUsage(
 export function normalizeRateLimits(
   raw: Record<string, unknown>,
   previous: RateLimitSnapshot | null = null,
+  options: NormalizeRateLimitsOptions = {},
 ): RateLimitSnapshot {
   const previousPrimary = previous?.primary ?? null;
   const previousSecondary = previous?.secondary ?? null;
   const previousCredits = previous?.credits ?? null;
   const previousResetCredits = previous?.rateLimitResetCredits ?? null;
+  const preserveNulls = options.sparse === true;
 
   const primary =
     hasOwn(raw, "primary")
       ? raw.primary === null
-        ? null
+        ? preserveNulls
+          ? previousPrimary
+          : null
         : raw.primary &&
             typeof raw.primary === "object" &&
             !Array.isArray(raw.primary)
@@ -332,7 +340,9 @@ export function normalizeRateLimits(
   const secondary =
     hasOwn(raw, "secondary")
       ? raw.secondary === null
-        ? null
+        ? preserveNulls
+          ? previousSecondary
+          : null
         : raw.secondary &&
             typeof raw.secondary === "object" &&
             !Array.isArray(raw.secondary)
@@ -346,7 +356,9 @@ export function normalizeRateLimits(
   const credits =
     hasOwn(raw, "credits")
       ? raw.credits === null
-        ? null
+        ? preserveNulls
+          ? previousCredits
+          : null
         : raw.credits &&
             typeof raw.credits === "object" &&
             !Array.isArray(raw.credits)
@@ -366,10 +378,14 @@ export function normalizeRateLimits(
         : null;
   const hasResetCreditsKey =
     hasOwn(raw, "rateLimitResetCredits") || hasOwn(raw, "rate_limit_reset_credits");
-  const resetCreditsRaw = raw.rateLimitResetCredits ?? raw.rate_limit_reset_credits;
+  const resetCreditsRaw = hasOwn(raw, "rateLimitResetCredits")
+    ? raw.rateLimitResetCredits
+    : raw.rate_limit_reset_credits;
   const rateLimitResetCredits = hasResetCreditsKey
     ? resetCreditsRaw === null
-      ? null
+      ? preserveNulls
+        ? previousResetCredits
+        : null
       : resetCreditsRaw &&
           typeof resetCreditsRaw === "object" &&
           !Array.isArray(resetCreditsRaw)
@@ -385,7 +401,9 @@ export function normalizeRateLimits(
     secondary,
     credits,
     rateLimitResetCredits,
-    planType: planTypeValue ?? (hasPlanTypeKey ? null : previous?.planType ?? null),
+    planType:
+      planTypeValue ??
+      (hasPlanTypeKey && !preserveNulls ? null : previous?.planType ?? null),
   };
 }
 

@@ -129,6 +129,101 @@ describe("normalizeRateLimits", () => {
     expect(normalized.secondary).toBeNull();
   });
 
+  it("preserves previous windows when a sparse update reports null unavailable values", () => {
+    const previous = {
+      primary: {
+        usedPercent: 35,
+        windowDurationMins: 300,
+        resetsAt: 1_700_000_000,
+      },
+      secondary: {
+        usedPercent: 72,
+        windowDurationMins: 10_080,
+        resetsAt: 1_700_500_000,
+      },
+      credits: {
+        hasCredits: true,
+        unlimited: false,
+        balance: "25",
+      },
+      rateLimitResetCredits: {
+        availableCount: 2,
+        credits: [],
+      },
+      planType: "pro",
+    } as const;
+
+    const normalized = normalizeRateLimits(
+      {
+        primary: {
+          usedPercent: 0,
+        },
+        secondary: null,
+        credits: null,
+        rateLimitResetCredits: null,
+        planType: null,
+      },
+      previous,
+      { sparse: true },
+    );
+
+    expect(normalized).toEqual({
+      primary: {
+        usedPercent: 0,
+        windowDurationMins: 300,
+        resetsAt: 1_700_000_000,
+      },
+      secondary: previous.secondary,
+      credits: previous.credits,
+      rateLimitResetCredits: previous.rateLimitResetCredits,
+      planType: "pro",
+    });
+  });
+
+  it("clears previous windows when a full snapshot reports null values", () => {
+    const previous = {
+      primary: {
+        usedPercent: 35,
+        windowDurationMins: 300,
+        resetsAt: 1_700_000_000,
+      },
+      secondary: {
+        usedPercent: 72,
+        windowDurationMins: 10_080,
+        resetsAt: 1_700_500_000,
+      },
+      credits: {
+        hasCredits: true,
+        unlimited: false,
+        balance: "25",
+      },
+      rateLimitResetCredits: {
+        availableCount: 2,
+        credits: [],
+      },
+      planType: "pro",
+    } as const;
+
+    const normalized = normalizeRateLimits(
+      {
+        primary: null,
+        secondary: null,
+        credits: null,
+        rateLimitResetCredits: null,
+        planType: null,
+      },
+      previous,
+    );
+
+    expect(normalized).toEqual({
+      primary: null,
+      secondary: null,
+      credits: null,
+      rateLimitResetCredits: null,
+      planType: null,
+    });
+  });
+
   it("normalizes remaining-style percent fields", () => {
     const normalized = normalizeRateLimits({
       primary: {

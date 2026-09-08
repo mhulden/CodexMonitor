@@ -402,7 +402,9 @@ export function useThreadTurnEvents({
       dispatch({
         type: "setRateLimits",
         workspaceId,
-        rateLimits: normalizeRateLimits(rateLimits, previousRateLimits),
+        rateLimits: normalizeRateLimits(rateLimits, previousRateLimits, {
+          sparse: true,
+        }),
       });
     },
     [dispatch, getCurrentRateLimits],
