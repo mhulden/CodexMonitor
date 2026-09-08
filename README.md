@@ -246,6 +246,19 @@ npm run tauri:build
 
 Artifacts will be in `src-tauri/target/release/bundle/` (platform-specific subfolders).
 
+GitHub release builds also publish standalone daemon archives for remote backend
+setups:
+
+- `CodexMonitor_daemon_<version>_macos-aarch64.tar.gz`
+- `CodexMonitor_daemon_<version>_macos-x64.tar.gz`
+- `CodexMonitor_daemon_<version>_linux-aarch64.tar.gz`
+- `CodexMonitor_daemon_<version>_linux-x86_64.tar.gz`
+- `CodexMonitor_daemon_<version>_windows-x64.zip`
+
+Each daemon archive contains `codex_monitor_daemon` and
+`codex_monitor_daemonctl` for the target platform. The macOS `.app` artifacts
+also embed the daemon binaries for managed mobile/remote access.
+
 ### Windows (opt-in)
 
 Windows builds are opt-in and use a separate Tauri config file to avoid macOS-only window effects.
