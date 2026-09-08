@@ -546,7 +546,11 @@ describe("GitDiffViewer", () => {
       });
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Stage" }));
+    const stageButton = screen.getByRole("button", { name: "Stage" });
+    await waitFor(() => {
+      expect(stageButton.getAttribute("aria-disabled")).toBe("false");
+    });
+    fireEvent.click(stageButton);
     await waitFor(() => {
       expect(onApplyDisplayHunk).toHaveBeenLastCalledWith({
         path: "src/main.ts",
